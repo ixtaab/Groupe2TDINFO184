@@ -80,50 +80,40 @@ Config lire_config(string fichier_nom) {
     return result;
 }
 
-void assombrir_image(Image_PNG &img, const string &nom_fichier, double ratio, size_t etape, size_t nb_etapes) {
-    size_t hauteur = img.hauteur;
-    size_t largeur = img.largeur;
+void assombrir_image(Image_PNG *image_original, Image_PNG *image_assombri, double ratio) {
+    size_t hauteur = image_original->hauteur;
+    size_t largeur = image_original->largeur;
 
-    // Calcul du facteur d'assombrissement pour cette étape
-    double facteur = 1.0 - (ratio * etape);
-
-    // Application du facteur d'assombrissement pixel par pixel
     for (size_t i = 0; i < hauteur; ++i) {
         for (size_t j = 0; j < largeur; ++j) {
-            RVB &pixel = img.pixels[i][j];
-            pixel.rouge = static_cast<Composante>(pixel.rouge * facteur);
-            pixel.vert = static_cast<Composante>(pixel.vert * facteur);
-            pixel.bleu = static_cast<Composante>(pixel.bleu * facteur);
+            RVB pixel_original = image_original->pixels[i][j];
+
+            RVB pixel_assombri;
+            pixel_assombri.rouge = static_cast<Composante>(pixel_original.rouge * ratio);
+            pixel_assombri.vert = static_cast<Composante>(pixel_original.vert * ratio);
+            pixel_assombri.bleu = static_cast<Composante>(pixel_original.bleu * ratio);
+
+            image_assombri->pixels[i][j] = pixel_assombri;
         }
     }
-
-    // Sauvegarde de l'image de cette étape
-    string nom_image_assombri = "image/assombri_" + to_string(etape) + ".png";
-    sauver_PNG(nom_image_assombri, img);
 }
 
-void creer_etape_fondu_noir(Image_PNG &img, size_t nb_etape, const string &fname) {
-    double ratio = 1.0 / nb_etape;
+void creer_fondu_noir(const string nom_fichier_source, size_t nb_etapes) {
+    Image_PNG image = charger_PNG(nom_fichier_source);
+    string fname = nom_fichier_source;
 
-    for (size_t i = 1; i <= nb_etape; ++i) {
-        assombrir_image(img, fname, ratio, i, nb_etape);
+    Image_PNG image_buffer = creer_PNG(image.hauteur, image.largeur);
+    
+    for(size_t i = 0; i < nb_etapes; i++) {
+        double ratio = (1.0 / nb_etapes) * i;
+        assombrir_image(&image, &image_buffer, ratio);
+        sauver_PNG("out/images/" + nom_fichier_source + "_" + to_string(i) + ".png", image_buffer);
     }
 
-    // Génération du GIF animé à partir des images sauvegardées
-    if (nb_etape > 1) {
-        generer_GIF("image/assombri_", "animation/animation_assombrissement", 1, nb_etape, 15, 0);
+    if (nb_etapes >= 1) {
+        generer_GIF("out/images/" + nom_fichier_source + "_", "out/gif", 0, nb_etapes, 15, 0);
         cout << "GIF animé généré : animation/animation_assombrissement.gif" << endl;
     }
-}
-
-void creer_fondu_noir(const string &nom_fichier_source) {
-    Image_PNG img = charger_PNG(nom_fichier_source);
-    string fname = nom_fichier_source;
-    size_t nb_etape;
-
-    cout << "Combien d'étapes pour le fondu ?";
-    cin >> nb_etape;
-    creer_etape_fondu_noir(img, nb_etape, fname);
 }
 
 int main(int argc, char *argv[]) {
@@ -131,7 +121,9 @@ int main(int argc, char *argv[]) {
         throw runtime_error("USAGE: " + string(argv[0]) + " file");
     }
 
-    creer_fondu_noir(argv[1]);
-
-    return 0;
+    // TODO
+    // cout << "Combien d'étapes pour le fondu ?\n";
+    // cin >> nb_etape;
+    
+    // creer_fondu_noir(argv[1]);
 }
