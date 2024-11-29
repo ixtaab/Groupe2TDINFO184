@@ -125,5 +125,5 @@ int main(int argc, char *argv[]) {
     // cout << "Combien d'étapes pour le fondu ?\n";
     // cin >> nb_etape;
     
-    // creer_fondu_noir(argv[1]); arnaud le pd
+    // creer_fondu_noir(argv[1]); arnaud le pd CACACCACA
 }
