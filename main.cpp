@@ -3,6 +3,7 @@
 #include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <filesystem>
 
 using namespace std;
 
@@ -98,21 +99,33 @@ void assombrir_image(Image_PNG *image_original, Image_PNG *image_assombri, doubl
     }
 }
 
-void creer_fondu_noir(const string nom_fichier_source, size_t nb_etapes) {
-    Image_PNG image = charger_PNG(nom_fichier_source);
-    string fname = nom_fichier_source;
+void creer_fondu_noir(const string fichier_path, size_t nb_etapes) {
+    Image_PNG image = charger_PNG(fichier_path);
+    size_t lastSlash = fichier_path.find_last_of("/\\");
+    string nom_fichier = fichier_path.substr(lastSlash + 1);
+
+    if (!filesystem::exists("out")) {
+        filesystem::create_directory("out");
+    }
+
+    if (!filesystem::exists("out/images")) {
+        filesystem::create_directory("out/images");
+    }
+
+    if (!filesystem::exists("out/gif")) {
+        filesystem::create_directory("out/gif");
+    }
 
     Image_PNG image_buffer = creer_PNG(image.hauteur, image.largeur);
     
     for(size_t i = 0; i < nb_etapes; i++) {
         double ratio = (1.0 / nb_etapes) * i;
         assombrir_image(&image, &image_buffer, ratio);
-        sauver_PNG("out/images/" + nom_fichier_source + "_" + to_string(i) + ".png", image_buffer);
+        sauver_PNG("out/images/" + nom_fichier + "_" + to_string(i) + ".png", image_buffer);
     }
 
     if (nb_etapes >= 1) {
-        generer_GIF("out/images/" + nom_fichier_source + "_", "out/gif", 0, nb_etapes, 15, 0);
-        cout << "GIF animé généré : animation/animation_assombrissement.gif" << endl;
+        generer_GIF("out/images/" + nom_fichier + "_", "out/gif", 0, nb_etapes - 1, 15, 0);
     }
 }
 
@@ -121,9 +134,9 @@ int main(int argc, char *argv[]) {
         throw runtime_error("USAGE: " + string(argv[0]) + " file");
     }
 
-    // TODO
-    // cout << "Combien d'étapes pour le fondu ?\n";
-    // cin >> nb_etape;
+    size_t nb_etapes;
+    cout << "Combien d'étapes pour le fondu ?\n";
+    cin >> nb_etapes;
     
-    // creer_fondu_noir(argv[1]);
+    creer_fondu_noir(argv[1], nb_etapes);
 }
