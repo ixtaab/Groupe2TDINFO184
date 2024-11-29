@@ -125,7 +125,7 @@ void creer_fondu_noir(const string fichier_path, size_t nb_etapes) {
     }
 
     if (nb_etapes >= 1) {
-        generer_GIF("out/images/" + nom_fichier + "_", "out/gif", 0, nb_etapes - 1, 15, 0);
+        generer_GIF("out/images/" + nom_fichier + "_", "out/gif/", 0, nb_etapes - 1, 15, 0);
     }
 }
 
