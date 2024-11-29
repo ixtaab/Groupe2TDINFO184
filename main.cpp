@@ -102,7 +102,8 @@ void assombrir_image(Image_PNG *image_original, Image_PNG *image_assombri, doubl
 void creer_fondu_noir(const string fichier_path, size_t nb_etapes) {
     Image_PNG image = charger_PNG(fichier_path);
     size_t lastSlash = fichier_path.find_last_of("/\\");
-    string nom_fichier = fichier_path.substr(lastSlash + 1);
+    size_t lastDot = fichier_path.find_last_of(".");
+    string nom_fichier = fichier_path.substr(lastSlash + 1, lastDot - lastSlash - 1 );
 
     if (!filesystem::exists("out")) {
         filesystem::create_directory("out");
@@ -125,7 +126,7 @@ void creer_fondu_noir(const string fichier_path, size_t nb_etapes) {
     }
 
     if (nb_etapes >= 1) {
-        generer_GIF("out/images/" + nom_fichier + "_", "out/gif/", 0, nb_etapes - 1, 15, 0);
+        generer_GIF("out/images/" + nom_fichier + "_", "out/gif/" + nom_fichier, 0, nb_etapes - 1, 15, 0);
     }
 }
 
@@ -133,6 +134,7 @@ int main(int argc, char *argv[]) {
     if (argc != 2) {
         throw runtime_error("USAGE: " + string(argv[0]) + " file");
     }
+
 
     size_t nb_etapes;
     cout << "Combien d'étapes pour le fondu ?\n";
