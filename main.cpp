@@ -122,7 +122,7 @@ void creer_fondu_noir(const string fichier_path, size_t nb_etapes) {
     for(size_t i = 0; i < nb_etapes; i++) {
         double ratio = (1.0 / nb_etapes) * i;
         assombrir_image(&image, &image_buffer, ratio);
-        sauver_PNG("out/images/" + nom_fichier + "_" + to_string(i) + ".png", image_buffer);
+        sauver_PNG("out/images/" + nom_fichier + "_" + to_string(nb_etapes - i - 1) + ".png", image_buffer);
     }
 
     if (nb_etapes >= 1) {
@@ -134,7 +134,6 @@ int main(int argc, char *argv[]) {
     if (argc != 2) {
         throw runtime_error("USAGE: " + string(argv[0]) + " file");
     }
-
 
     size_t nb_etapes;
     cout << "Combien d'étapes pour le fondu ?\n";
