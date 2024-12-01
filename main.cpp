@@ -81,6 +81,24 @@ Config lire_config(string fichier_nom) {
     return result;
 }
 
+
+// TODO
+// void floutage_gaussien()
+
+
+// void niveau_gris
+
+
+// void taille_imagr
+
+
+
+// void bruiter_img
+
+
+//
+
+
 void assombrir_image(Image_PNG *image_original, Image_PNG *image_assombri, double ratio) {
     size_t hauteur = image_original->hauteur;
     size_t largeur = image_original->largeur;
