@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <cmath>
 #include <vector>
-#include <omp.h>
+#include <cassert>
 
 using namespace std;
 
@@ -90,7 +90,10 @@ double gaussian_function(int x, int y, double sigma) {
 
 // TODO
 void floutage_gaussien(Image_PNG *image_originale, Image_PNG *image_floue, double sigma) {
-    int kernel_size = static_cast<int>(std::ceil(6 * sigma)) + 1;
+    assert(image_originale->largeur == image_floue->largeur);
+    assert(image_originale->hauteur == image_floue->hauteur);
+
+    int kernel_size = static_cast<int>(std::ceil(3 * sigma)) + 1;
     double factor_sum = 0;
 
     for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
@@ -99,27 +102,28 @@ void floutage_gaussien(Image_PNG *image_originale, Image_PNG *image_floue, doubl
         }
     }
 
-    #pragma omp parallel for collapse(2)
-    for(size_t x = 0; x < image_originale->largeur; x++) {
-        for(size_t y = 0; y < image_originale->hauteur; y++) {
-            RVB pixel = image_originale->pixels[x][y];
+    for(size_t y = 0; y < image_originale->hauteur; y++) {
+        for(size_t x = 0; x < image_originale->largeur; x++) {
+            RVB pixel = image_originale->pixels[y][x];
 
             double r = 0;
             double g = 0;
             double b = 0;
 
-            for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
-                for(int ry = -kernel_size/2; ry <= kernel_size/2; ry++) {
+            for(int ry = -kernel_size/2; ry <= kernel_size/2; ry++) {
+                for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
                     RVB r_pixel;
-                    if ((x + rx) < 0 || (y + ry) < 0 || 
-                        (x + rx) >= image_originale->largeur || 
-                        (y + ry) >= image_originale->hauteur) {
+                    if (
+                        (y + ry) < 0 || (x + rx) < 0 || 
+                        (y + ry) >= image_originale->hauteur || 
+                        (x + rx) >= image_originale->largeur
+                    ) {
                         r_pixel = pixel;
                     } else {
-                        r_pixel = image_originale->pixels[x + rx][y + ry];
+                        r_pixel = image_originale->pixels[y + ry][x + rx];
                     }
 
-                    double factor = gaussian_function(rx, ry, sigma) / factor_sum;
+                    double factor = gaussian_function(ry, rx, sigma) / factor_sum;
 
                     r += static_cast<double>(r_pixel.rouge) * factor;
                     g += static_cast<double>(r_pixel.vert)  * factor;
@@ -127,14 +131,14 @@ void floutage_gaussien(Image_PNG *image_originale, Image_PNG *image_floue, doubl
                 }
             }
 
-            image_floue->pixels[x][y].rouge = static_cast<Composante>(r);
-            image_floue->pixels[x][y].vert  = static_cast<Composante>(g);
-            image_floue->pixels[x][y].bleu  = static_cast<Composante>(b);
+            image_floue->pixels[y][x].rouge = static_cast<Composante>(r);
+            image_floue->pixels[y][x].vert  = static_cast<Composante>(g);
+            image_floue->pixels[y][x].bleu  = static_cast<Composante>(b);
         }
     }
 }
 
-void creer_fondu_flou(const string fichier_path,size_t nb_etapes, double somme_max){
+void creer_fondu_flou(const string fichier_path, size_t nb_etapes, double somme_max) {
     Image_PNG image = charger_PNG(fichier_path);
     size_t lastSlash = fichier_path.find_last_of("/\\");
     size_t lastDot = fichier_path.find_last_of(".");

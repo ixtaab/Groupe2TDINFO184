@@ -18,7 +18,7 @@ struct RVB {
 };
 // Opérateurs de comparaisons de RVB
 inline bool operator==(const RVB & pix1, const RVB & pix2) {
-    return (pix1.rouge==pix2.rouge) && (pix1.vert==pix2.vert) && (pix1.bleu==pix2.vert);
+    return (pix1.rouge==pix2.rouge) && (pix1.vert==pix2.vert) && (pix1.bleu==pix2.bleu);
 }
 inline bool operator!=(const RVB & pix1, const RVB & pix2) {
     return !(pix1==pix2);
