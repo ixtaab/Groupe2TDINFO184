@@ -4,6 +4,9 @@
 #include <iostream>
 #include <stdexcept>
 #include <filesystem>
+#include <cmath>
+#include <vector>
+
 
 using namespace std;
 
@@ -83,7 +86,44 @@ Config lire_config(string fichier_nom) {
 
 
 // TODO
-// void floutage_gaussien()
+void floutage_gaussien(Image_PNG *image_originale, Image_PNG *image_floue, double sigma) {
+
+    // trop compliqué flemme je regarder l'anime darker than black au moins j'ai fait la fonction pr les étapes en bas 
+}
+
+void creer_fondu_flou(const string fichier_path,size_t nb_etapes, double somme_max){
+    Image_PNG image = charger_PNG(fichier_path);
+    size_t lastSlash = fichier_path.find_last_of("/\\");
+    size_t lastDot = fichier_path.find_last_of(".");
+    string nom_fichier = fichier_path.substr(lastSlash + 1, lastDot - lastSlash - 1);
+
+    
+
+
+    if (!filesystem::exists("out")) {
+        filesystem::create_directory("out");
+    }
+
+    if (!filesystem::exists("out/images")) {
+        filesystem::create_directory("out/images");
+    }
+
+    if (!filesystem::exists("out/gif")) {
+        filesystem::create_directory("out/gif");
+    }
+    
+    Image_PNG image_buffer = creer_PNG(image.hauteur, image.largeur);
+    
+    for(size_t i = 0; i < nb_etapes; i++) {
+        double somme = (somme_max / nb_etapes) * (i + 1);
+        floutage_gaussien(&image, &image_buffer, somme);
+        sauver_PNG("out/images/" + nom_fichier + "_" + to_string(i) + ".png", image_buffer);
+    }
+
+    if (nb_etapes >= 1) {
+        generer_GIF("out/images/" + nom_fichier + "_", "out/gif/" + nom_fichier, 0, nb_etapes - 1, 15, 0);
+    }
+}
 
 
 // void niveau_gris
