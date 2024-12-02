@@ -254,5 +254,5 @@ void generer_GIF(const std::string & nom_pngs, const std::string & nom_gif, size
    for (size_t i= premier; i <= dernier; ++i)
       concat_inputs += nom_pngs + std::to_string(i) + ".png ";
 
-   std::system(("convert -delay " + std::to_string(delay) + " -loop " + std::to_string(loop) + " " + concat_inputs + nom_gif + ".gif").c_str());
+    int result = std::system(("convert -delay " + std::to_string(delay) + " -loop " + std::to_string(loop) + " " + concat_inputs + nom_gif + ".gif").c_str());
 }

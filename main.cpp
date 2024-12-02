@@ -6,7 +6,7 @@
 #include <filesystem>
 #include <cmath>
 #include <vector>
-
+#include <omp.h>
 
 using namespace std;
 
@@ -84,11 +84,54 @@ Config lire_config(string fichier_nom) {
     return result;
 }
 
+double gaussian_function(int x, int y, double sigma) {
+    return (1.0 / (2.0 * M_PI * sigma * sigma)) * std::exp(-(x * x + y * y) / (2.0 * sigma * sigma));
+}
 
 // TODO
 void floutage_gaussien(Image_PNG *image_originale, Image_PNG *image_floue, double sigma) {
+    int kernel_size = static_cast<int>(std::ceil(6 * sigma)) + 1;
+    double factor_sum = 0;
 
-    // trop compliqué flemme je regarder l'anime darker than black au moins j'ai fait la fonction pr les étapes en bas 
+    for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
+        for(int ry = -kernel_size/2; ry <= kernel_size/2; ry++) {
+            factor_sum += gaussian_function(rx, ry, sigma);
+        }
+    }
+
+    #pragma omp parallel for collapse(2)
+    for(size_t x = 0; x < image_originale->largeur; x++) {
+        for(size_t y = 0; y < image_originale->hauteur; y++) {
+            RVB pixel = image_originale->pixels[x][y];
+
+            double r = 0;
+            double g = 0;
+            double b = 0;
+
+            for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
+                for(int ry = -kernel_size/2; ry <= kernel_size/2; ry++) {
+                    RVB r_pixel;
+                    if ((x + rx) < 0 || (y + ry) < 0 || 
+                        (x + rx) >= image_originale->largeur || 
+                        (y + ry) >= image_originale->hauteur) {
+                        r_pixel = pixel;
+                    } else {
+                        r_pixel = image_originale->pixels[x + rx][y + ry];
+                    }
+
+                    double factor = gaussian_function(rx, ry, sigma) / factor_sum;
+
+                    r += static_cast<double>(r_pixel.rouge) * factor;
+                    g += static_cast<double>(r_pixel.vert)  * factor;
+                    b += static_cast<double>(r_pixel.bleu)  * factor;
+                }
+            }
+
+            image_floue->pixels[x][y].rouge = static_cast<Composante>(r);
+            image_floue->pixels[x][y].vert  = static_cast<Composante>(g);
+            image_floue->pixels[x][y].bleu  = static_cast<Composante>(b);
+        }
+    }
 }
 
 void creer_fondu_flou(const string fichier_path,size_t nb_etapes, double somme_max){
@@ -96,9 +139,6 @@ void creer_fondu_flou(const string fichier_path,size_t nb_etapes, double somme_m
     size_t lastSlash = fichier_path.find_last_of("/\\");
     size_t lastDot = fichier_path.find_last_of(".");
     string nom_fichier = fichier_path.substr(lastSlash + 1, lastDot - lastSlash - 1);
-
-    
-
 
     if (!filesystem::exists("out")) {
         filesystem::create_directory("out");
@@ -196,6 +236,7 @@ int main(int argc, char *argv[]) {
     size_t nb_etapes;
     cout << "Combien d'étapes pour le fondu ?\n";
     cin >> nb_etapes;
-    
-    creer_fondu_noir(argv[1], nb_etapes);
+
+    // creer_fondu_noir(argv[1], nb_etapes);
+    creer_fondu_flou(argv[1], nb_etapes, 10);
 }
