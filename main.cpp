@@ -8,6 +8,8 @@
 #include <vector>
 #include <cassert>
 
+#include <omp.h>
+
 using namespace std;
 
 struct ParamEntier {
@@ -93,7 +95,7 @@ void floutage_gaussien(Image_PNG *image_originale, Image_PNG *image_floue, doubl
     assert(image_originale->largeur == image_floue->largeur);
     assert(image_originale->hauteur == image_floue->hauteur);
 
-    int kernel_size = static_cast<int>(std::ceil(3 * sigma)) + 1;
+    int kernel_size = static_cast<int>(std::ceil(2 * sigma)) + 1;
     double factor_sum = 0;
 
     for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
@@ -102,6 +104,7 @@ void floutage_gaussien(Image_PNG *image_originale, Image_PNG *image_floue, doubl
         }
     }
 
+    #pragma omp parallel for
     for(size_t y = 0; y < image_originale->hauteur; y++) {
         for(size_t x = 0; x < image_originale->largeur; x++) {
             RVB pixel = image_originale->pixels[y][x];
