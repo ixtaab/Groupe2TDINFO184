@@ -7,6 +7,7 @@
 #include <cmath>
 #include <vector>
 #include <cassert>
+#include <algorithm>
 
 #include <omp.h>
 
@@ -86,11 +87,59 @@ Config lire_config(string fichier_nom) {
     return result;
 }
 
+
+void bruitage(Image_PNG *image_originale, Image_PNG *image_bruiter, int force) {
+    assert(image_originale->largeur == image_bruiter->largeur);
+    assert(image_originale->hauteur == image_bruiter->hauteur);
+
+
+    #pragma omp parallel for
+    for(size_t y = 0; y < image_originale->hauteur; y++) {
+        for(size_t x = 0; x < image_originale->largeur; x++) {
+            RVB pixel = image_originale->pixels[y][x];
+
+            image_bruiter->pixels[y][x].rouge = clamp(rand() % force - force/2 + pixel.rouge, 0, 255);
+            image_bruiter->pixels[y][x].vert  = clamp(rand() % force - force/2 + pixel.vert, 0, 255);
+            image_bruiter->pixels[y][x].bleu  = clamp(rand() % force - force/2 + pixel.bleu, 0, 255);
+        }
+    }
+}
+
+void creer_fondu_bruitage(const string fichier_path, size_t nb_etapes, double somme_max) {
+    Image_PNG image = charger_PNG(fichier_path);
+    size_t lastSlash = fichier_path.find_last_of("/\\");
+    size_t lastDot = fichier_path.find_last_of(".");
+    string nom_fichier = fichier_path.substr(lastSlash + 1, lastDot - lastSlash - 1);
+
+    if (!filesystem::exists("out")) {
+        filesystem::create_directory("out");
+    }
+
+    if (!filesystem::exists("out/images")) {
+        filesystem::create_directory("out/images");
+    }
+
+    if (!filesystem::exists("out/gif")) {
+        filesystem::create_directory("out/gif");
+    }
+    
+    Image_PNG image_buffer = creer_PNG(image.hauteur, image.largeur);
+    
+    for(size_t i = 0; i < nb_etapes; i++) {
+        double somme = (somme_max / nb_etapes) * (i + 1);
+        bruitage(&image, &image_buffer, static_cast<int>(somme));
+        sauver_PNG("out/images/" + nom_fichier + "_" + to_string(i) + ".png", image_buffer);
+    }
+
+    if (nb_etapes >= 1) {
+        generer_GIF("out/images/" + nom_fichier + "_", "out/gif/" + nom_fichier, 0, nb_etapes - 1, 15, 0);
+    }
+}
+
 double gaussian_function(int x, int y, double sigma) {
     return (1.0 / (2.0 * M_PI * sigma * sigma)) * std::exp(-(x * x + y * y) / (2.0 * sigma * sigma));
 }
 
-// TODO
 void floutage_gaussien(Image_PNG *image_originale, Image_PNG *image_floue, double sigma) {
     assert(image_originale->largeur == image_floue->largeur);
     assert(image_originale->hauteur == image_floue->hauteur);
@@ -121,7 +170,15 @@ void floutage_gaussien(Image_PNG *image_originale, Image_PNG *image_floue, doubl
                         (y + ry) >= image_originale->hauteur || 
                         (x + rx) >= image_originale->largeur
                     ) {
-                        r_pixel = pixel;
+                        if (
+                            (y - ry) < 0 || (x - rx) < 0 || 
+                            (y - ry) >= image_originale->hauteur || 
+                            (x - rx) >= image_originale->largeur
+                        ) {
+                            r_pixel = pixel;
+                        } else {
+                            r_pixel = image_originale->pixels[y - ry][x - rx];
+                        }
                     } else {
                         r_pixel = image_originale->pixels[y + ry][x + rx];
                     }
@@ -245,5 +302,6 @@ int main(int argc, char *argv[]) {
     cin >> nb_etapes;
 
     // creer_fondu_noir(argv[1], nb_etapes);
-    creer_fondu_flou(argv[1], nb_etapes, 10);
+    creer_fondu_flou(argv[1], nb_etapes, 50);
+    // creer_fondu_bruitage(argv[1], nb_etapes, 1500);
 }
