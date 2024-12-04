@@ -4,7 +4,7 @@
         {
             "label": "build",
             "type": "shell",
-            "command": "mkdir -p bin && g++ main.cpp -Ipngio -lpng -g -o bin/program",
+            "command": "mkdir -p bin && g++ main.cpp -std=c++17 -Ipngio -lpng -g -o bin/program",
             "group": {
                 "kind": "build",
                 "isDefault": true
