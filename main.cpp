@@ -152,6 +152,7 @@ void convertir_niveaux_gris(const Image_PNG& image_source, Image_PNG& image_dest
 }
 
 void bruiter_image(const Image_PNG& image_source, Image_PNG& image_destination, int intensite) {
+    // TODO: a completer pour la consigne du projet
     for(size_t y = 0; y < image_source.hauteur; y++) {
         for(size_t x = 0; x < image_source.largeur; x++) {
             RVB pixel_src = image_source.pixels[y][x];
@@ -190,25 +191,15 @@ void flouter_image(const Image_PNG& image_source, Image_PNG& image_destination, 
 
             for(int ry = -kernel_size/2; ry <= kernel_size/2; ry++) {
                 for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
-                    RVB r_pixel;
-                    // TODO: cleanup this part
-                    if (
-                        (y + ry) < 0 || (x + rx) < 0 || 
-                        (y + ry) >= image_source.hauteur || 
-                        (x + rx) >= image_source.largeur
-                    ) {
-                        if (
-                            (y - ry) < 0 || (x - rx) < 0 || 
-                            (y - ry) >= image_source.hauteur || 
-                            (x - rx) >= image_source.largeur
-                        ) {
-                            r_pixel = pixel;
-                        } else {
-                            r_pixel = image_source.pixels[y - ry][x - rx];
-                        }
-                    } else {
-                        r_pixel = image_source.pixels[y + ry][x + rx];
-                    }
+                    int offset_x = x + rx;
+                    int offset_y = y + ry;
+
+                    if (offset_x < 0) offset_x = x - rx;
+                    if (offset_y < 0) offset_y = y - ry;
+                    if (offset_x >= image_source.largeur) offset_x = x - rx;
+                    if (offset_y >= image_source.hauteur) offset_y = y - ry;
+                    
+                    RVB r_pixel = image_source.pixels[offset_y][offset_x];
 
                     double factor = gaussian_function(ry, rx, intensite) / factor_sum;
 
@@ -244,7 +235,7 @@ void creer_animation_fondu_noir(const string& chemin_image, const string& chemin
                 0, nb_etapes - 1, 15, 0);
 }
 
-void creer_fondu_bruitage(const string& chemin_image, const string& chemin_destination, size_t nb_etapes, double somme_max) {
+void creer_animation_fondu_bruitage(const string& chemin_image, const string& chemin_destination, size_t nb_etapes, double intensite_max) {
     creer_dossiers_sortie(chemin_destination);
 
     Image_PNG image_source = charger_PNG(chemin_image);
@@ -252,7 +243,7 @@ void creer_fondu_bruitage(const string& chemin_image, const string& chemin_desti
     Image_PNG image_tampon = creer_PNG(image_source.hauteur, image_source.largeur);
     
     for(size_t i = 0; i < nb_etapes; i++) {
-        double intensite = (somme_max / nb_etapes) * (i + 1);
+        double intensite = (intensite_max / nb_etapes) * (i + 1);
         bruiter_image(image_source, image_tampon, intensite);
         sauver_PNG(chemin_destination + "/images/" + nom_image + "_" + 
                    to_string(i) + ".png", image_tampon);
@@ -295,8 +286,21 @@ int main(int argc, char *argv[]) {
         optional<string> chemin_image = trouver_param_chaine(config, "Schemin_image");
         optional<size_t> nb_etapes = trouver_param_entier(config, "Enb_etapes");
         creer_animation_fondu_noir(chemin_image.value_or("image.png"), chemin_destination.value_or("destination"), nb_etapes.value_or(5));
+    } else if (nom_fonction == "creer_animation_fondu_bruitage") {
+        optional<string> chemin_destination = trouver_param_chaine(config, "Schemin_destination");
+        optional<string> chemin_image = trouver_param_chaine(config, "Schemin_image");
+        optional<size_t> nb_etapes = trouver_param_entier(config, "Enb_etapes");
+        optional<size_t> intensite_max = trouver_param_entier(config, "Eintensite_max");
+        creer_animation_fondu_bruitage(chemin_image.value_or("image.png"), chemin_destination.value_or("destination"), 
+                                       nb_etapes.value_or(5), intensite_max.value_or(5));
+    } else if (nom_fonction == "creer_animation_fondu_flou") {
+        optional<string> chemin_destination = trouver_param_chaine(config, "Schemin_destination");
+        optional<string> chemin_image = trouver_param_chaine(config, "Schemin_image");
+        optional<size_t> nb_etapes = trouver_param_entier(config, "Enb_etapes");
+        optional<size_t> intensite_max = trouver_param_entier(config, "Eintensite_max");
+        creer_animation_fondu_flou(chemin_image.value_or("image.png"), chemin_destination.value_or("destination"), 
+                                       nb_etapes.value_or(5), intensite_max.value_or(5));
     }
-    // TODO: continue for all functions
 
     return 0;
 }
