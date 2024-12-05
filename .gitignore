@@ -2,4 +2,5 @@ image/
 animation/
 bin/
 out/
+test_out/
 ignore_*

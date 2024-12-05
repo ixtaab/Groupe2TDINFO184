@@ -1,0 +1,5 @@
+creer_animation_fondu_bruitage
+Schemin_destination = ./test_out/fondu_bruitage
+Schemin_image = ./test_ressources/images/grenouille.png
+Enb_etapes = 5
+Eintensite_max = 1000
