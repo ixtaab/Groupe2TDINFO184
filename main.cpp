@@ -4,8 +4,6 @@
 #include <iostream>
 #include <stdexcept>
 #include <filesystem>
-#include <cmath>
-#include <vector>
 #include <cassert>
 #include <random>
 #include <algorithm>
@@ -143,9 +141,9 @@ void convertir_niveaux_gris(const Image_PNG& image_source, Image_PNG& image_dest
             RVB pixel = image_source.pixels[y][x];
             double luminosite = pixel.rouge * 0.299 + pixel.vert * 0.587 + pixel.bleu * 0.114;
             image_destination.pixels[y][x] = {
-                static_cast<Composante>(pixel.rouge * (1-ratio) + luminosite * ratio),
-                static_cast<Composante>(pixel.vert  * (1-ratio) + luminosite * ratio),
-                static_cast<Composante>(pixel.bleu  * (1-ratio) + luminosite * ratio)
+                static_cast<Composante>(pixel.rouge * ratio + luminosite * (1-ratio)),
+                static_cast<Composante>(pixel.vert  * ratio + luminosite * (1-ratio)),
+                static_cast<Composante>(pixel.bleu  * ratio + luminosite * (1-ratio))
             };
         }
     }
@@ -226,13 +224,40 @@ void creer_animation_fondu_noir(const string& chemin_image, const string& chemin
     for(size_t i = 0; i < nb_etapes; i++) {
         double ratio = 1.0 - (static_cast<double>(i) / (nb_etapes - 1));
         assombrir_image(image_source, image_tampon, ratio);
-        sauver_PNG(chemin_destination + "/images/" + nom_image + "_" + 
-                   to_string(i) + ".png", image_tampon);
+        sauver_PNG(
+            chemin_destination + "/images/" + nom_image + "_" + 
+            to_string(i) + ".png", image_tampon
+        );
     }
 
-    generer_GIF(chemin_destination + "/images/" + nom_image + "_",
-                chemin_destination + "/gif/" + nom_image,
-                0, nb_etapes - 1, 15, 0);
+    generer_GIF(
+        chemin_destination + "/images/" + nom_image + "_",
+        chemin_destination + "/gif/" + nom_image,
+        0, nb_etapes - 1, 15, 0
+    );
+}
+
+void creer_animation_fondu_niveaux_gris(const string& chemin_image, const string& chemin_destination, size_t nb_etapes) {
+    creer_dossiers_sortie(chemin_destination);
+
+    Image_PNG image_source = charger_PNG(chemin_image);
+    string nom_image = extraire_nom_fichier(chemin_image);
+    Image_PNG image_tampon = creer_PNG(image_source.hauteur, image_source.largeur);
+
+    for(size_t i = 0; i < nb_etapes; i++) {
+        double ratio = 1.0 - (static_cast<double>(i) / (nb_etapes - 1));
+        convertir_niveaux_gris(image_source, image_tampon, ratio);
+        sauver_PNG(
+            chemin_destination + "/images/" + nom_image + "_" + 
+            to_string(i) + ".png", image_tampon
+        );
+    }
+
+    generer_GIF(
+        chemin_destination + "/images/" + nom_image + "_",
+        chemin_destination + "/gif/" + nom_image,
+        0, nb_etapes - 1, 15, 0
+    );
 }
 
 void creer_animation_fondu_bruitage(const string& chemin_image, const string& chemin_destination, size_t nb_etapes, double intensite_max) {
@@ -245,13 +270,17 @@ void creer_animation_fondu_bruitage(const string& chemin_image, const string& ch
     for(size_t i = 0; i < nb_etapes; i++) {
         double intensite = (intensite_max / nb_etapes) * (i + 1);
         bruiter_image(image_source, image_tampon, intensite);
-        sauver_PNG(chemin_destination + "/images/" + nom_image + "_" + 
-                   to_string(i) + ".png", image_tampon);
+        sauver_PNG(
+            chemin_destination + "/images/" + nom_image + "_" + 
+            to_string(i) + ".png", image_tampon
+        );
     }
 
-    generer_GIF(chemin_destination + "/images/" + nom_image + "_",
-                chemin_destination + "/gif/" + nom_image,
-                0, nb_etapes - 1, 15, 0);
+    generer_GIF(
+        chemin_destination + "/images/" + nom_image + "_",
+        chemin_destination + "/gif/" + nom_image,
+        0, nb_etapes - 1, 15, 0
+    );
 }
 
 void creer_animation_fondu_flou(const string& chemin_image, const string& chemin_destination, size_t nb_etapes, size_t intensite_max) {
@@ -264,13 +293,17 @@ void creer_animation_fondu_flou(const string& chemin_image, const string& chemin
     for(size_t i = 0; i < nb_etapes; i++) {
         double intensite = (intensite_max / nb_etapes) * (i + 1);
         flouter_image(image_source, image_tampon, intensite);
-        sauver_PNG(chemin_destination + "/images/" + nom_image + "_" + 
-                   to_string(i) + ".png", image_tampon);
+        sauver_PNG(
+            chemin_destination + "/images/" + nom_image + "_" + 
+            to_string(i) + ".png", image_tampon
+        );
     }
 
-    generer_GIF(chemin_destination + "/images/" + nom_image + "_",
-                chemin_destination + "/gif/" + nom_image,
-                0, nb_etapes - 1, 15, 0);
+    generer_GIF(
+        chemin_destination + "/images/" + nom_image + "_",
+        chemin_destination + "/gif/" + nom_image,
+        0, nb_etapes - 1, 15, 0
+    );
 }
 
 int main(int argc, char *argv[]) {
@@ -281,26 +314,37 @@ int main(int argc, char *argv[]) {
     Config config = lire_config(argv[1]);
     string nom_fonction = config.nom_fonction;
 
-    if (nom_fonction == "creer_animation_fondu_noir") {
-        optional<string> chemin_destination = trouver_param_chaine(config, "Schemin_destination");
-        optional<string> chemin_image = trouver_param_chaine(config, "Schemin_image");
-        optional<size_t> nb_etapes = trouver_param_entier(config, "Enb_etapes");
-        creer_animation_fondu_noir(chemin_image.value_or("image.png"), chemin_destination.value_or("destination"), nb_etapes.value_or(5));
-    } else if (nom_fonction == "creer_animation_fondu_bruitage") {
-        optional<string> chemin_destination = trouver_param_chaine(config, "Schemin_destination");
-        optional<string> chemin_image = trouver_param_chaine(config, "Schemin_image");
-        optional<size_t> nb_etapes = trouver_param_entier(config, "Enb_etapes");
-        optional<size_t> intensite_max = trouver_param_entier(config, "Eintensite_max");
-        creer_animation_fondu_bruitage(chemin_image.value_or("image.png"), chemin_destination.value_or("destination"), 
-                                       nb_etapes.value_or(5), intensite_max.value_or(5));
-    } else if (nom_fonction == "creer_animation_fondu_flou") {
-        optional<string> chemin_destination = trouver_param_chaine(config, "Schemin_destination");
-        optional<string> chemin_image = trouver_param_chaine(config, "Schemin_image");
-        optional<size_t> nb_etapes = trouver_param_entier(config, "Enb_etapes");
-        optional<size_t> intensite_max = trouver_param_entier(config, "Eintensite_max");
-        creer_animation_fondu_flou(chemin_image.value_or("image.png"), chemin_destination.value_or("destination"), 
-                                       nb_etapes.value_or(5), intensite_max.value_or(5));
-    }
+    optional<string> chemin_destination = trouver_param_chaine(config, "Schemin_destination");
+    optional<string> chemin_image = trouver_param_chaine(config, "Schemin_image");
+    optional<size_t> nb_etapes = trouver_param_entier(config, "Enb_etapes");
 
-    return 0;
+    if (nom_fonction == "creer_animation_fondu_noir") {
+        creer_animation_fondu_noir(
+            chemin_image.value_or("image.png"), 
+            chemin_destination.value_or("destination"), 
+            nb_etapes.value_or(5)
+        );
+    } else if (nom_fonction == "creer_animation_fondu_niveaux_gris") {
+        creer_animation_fondu_niveaux_gris(
+            chemin_image.value_or("image.png"), 
+            chemin_destination.value_or("destination"), 
+            nb_etapes.value_or(5)
+        );
+    } else if (nom_fonction == "creer_animation_fondu_bruitage") {
+        optional<size_t> intensite_max = trouver_param_entier(config, "Eintensite_max");
+        creer_animation_fondu_bruitage(
+            chemin_image.value_or("image.png"), 
+            chemin_destination.value_or("destination"), 
+            nb_etapes.value_or(5), 
+            intensite_max.value_or(5)
+        );
+    } else if (nom_fonction == "creer_animation_fondu_flou") {
+        optional<size_t> intensite_max = trouver_param_entier(config, "Eintensite_max");
+        creer_animation_fondu_flou(
+            chemin_image.value_or("image.png"), 
+            chemin_destination.value_or("destination"), 
+            nb_etapes.value_or(5), 
+            intensite_max.value_or(5)
+        );
+    }
 }
