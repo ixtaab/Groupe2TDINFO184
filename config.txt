@@ -1,0 +1,4 @@
+creer_animation_fondu_noir
+Schemin_destination = ./out/dest
+Schemin_image = ./images/grenouille.png
+Enb_etapes = 3
