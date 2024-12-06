@@ -28,7 +28,7 @@ struct Config {
     ParamChaine params_chaine[10];
 };
 
-optional<int> trouver_param_entier(Config& config, const string& nom) {
+optional<int> trouver_param_entier(const Config& config, const string& nom) {
     for(size_t i = 0; i < config.nb_params_entier; i++) {
         if (config.params_entier[i].nom == nom) {
             return config.params_entier[i].valeur;
@@ -37,7 +37,7 @@ optional<int> trouver_param_entier(Config& config, const string& nom) {
     return nullopt;
 }
 
-optional<string> trouver_param_chaine(Config& config, const string& nom) {
+optional<string> trouver_param_chaine(const Config& config, const string& nom) {
     for(size_t i = 0; i < config.nb_params_chaine; i++) {
         if (config.params_chaine[i].nom == nom) {
             return config.params_chaine[i].valeur;
@@ -171,22 +171,30 @@ double gaussian_function(int x, int y, double sigma) {
     return (1.0 / (2.0 * M_PI * sigma * sigma)) * std::exp(-(x * x + y * y) / (2.0 * sigma * sigma));
 }
 
-void flouter_image(const Image_PNG& image_source, Image_PNG& image_destination, double intensite) {
+void flouter_image(
+    const Image_PNG& image_source, 
+    Image_PNG& image_destination, 
+    Image_PNG& image_tampon, 
+    double intensite
+) {
     assert(image_source.largeur == image_destination.largeur);
     assert(image_source.hauteur == image_destination.hauteur);
+    assert(image_source.largeur == image_tampon.largeur);
+    assert(image_source.hauteur == image_tampon.hauteur);
 
-    int kernel_size = static_cast<int>(std::ceil(2 * intensite)) + 1;
+    size_t hauteur = image_source.largeur;
+    size_t largeur = image_source.largeur;
+
+    int kernel_size = static_cast<int>(std::ceil(3 * intensite)) + 1;
     double factor_sum = 0;
 
     for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
-        for(int ry = -kernel_size/2; ry <= kernel_size/2; ry++) {
-            factor_sum += gaussian_function(rx, ry, intensite);
-        }
+        factor_sum += gaussian_function(rx, 0, intensite);
     }
 
     #pragma omp parallel for
-    for(size_t y = 0; y < image_source.hauteur; y++) {
-        for(size_t x = 0; x < image_source.largeur; x++) {
+    for(size_t y = 0; y < hauteur; y++) {
+        for(size_t x = 0; x < largeur; x++) {
             RVB pixel = image_source.pixels[y][x];
 
             double r = 0;
@@ -194,23 +202,48 @@ void flouter_image(const Image_PNG& image_source, Image_PNG& image_destination, 
             double b = 0;
 
             for(int ry = -kernel_size/2; ry <= kernel_size/2; ry++) {
-                for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
-                    int resolved_x = x + rx;
-                    int resolved_y = y + ry;
+                int resolved_y = y + ry;
 
-                    if (resolved_x < 0) resolved_x = x - rx;
-                    if (resolved_y < 0) resolved_y = y - ry;
-                    if (resolved_x >= image_source.largeur) resolved_x = x - rx;
-                    if (resolved_y >= image_source.hauteur) resolved_y = y - ry;
+                if (resolved_y < 0) resolved_y = y - ry;
+                if (resolved_y >= hauteur) resolved_y = y - ry;
 
-                    RVB r_pixel = image_source.pixels[resolved_y][resolved_x];
+                RVB r_pixel = image_source.pixels[resolved_y][x];
 
-                    double factor = gaussian_function(ry, rx, intensite) / factor_sum;
+                double factor = gaussian_function(0, ry, intensite) / factor_sum;
 
-                    r += static_cast<double>(r_pixel.rouge) * factor;
-                    g += static_cast<double>(r_pixel.vert)  * factor;
-                    b += static_cast<double>(r_pixel.bleu)  * factor;
-                }
+                r += static_cast<double>(r_pixel.rouge) * factor;
+                g += static_cast<double>(r_pixel.vert)  * factor;
+                b += static_cast<double>(r_pixel.bleu)  * factor;
+            }
+
+            image_tampon.pixels[y][x].rouge = static_cast<Composante>(r);
+            image_tampon.pixels[y][x].vert  = static_cast<Composante>(g);
+            image_tampon.pixels[y][x].bleu  = static_cast<Composante>(b);
+        }
+    }
+
+    #pragma omp parallel for
+    for(size_t y = 0; y < hauteur; y++) {
+        for(size_t x = 0; x < largeur; x++) {
+            RVB pixel = image_tampon.pixels[y][x];
+
+            double r = 0;
+            double g = 0;
+            double b = 0;
+
+            for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
+                int resolved_x = x + rx;
+
+                if (resolved_x < 0) resolved_x = x - rx;
+                if (resolved_x >= largeur) resolved_x = x - rx;
+
+                RVB r_pixel = image_tampon.pixels[y][resolved_x];
+
+                double factor = gaussian_function(rx, 0, intensite) / factor_sum;
+
+                r += static_cast<double>(r_pixel.rouge) * factor;
+                g += static_cast<double>(r_pixel.vert)  * factor;
+                b += static_cast<double>(r_pixel.bleu)  * factor;
             }
 
             image_destination.pixels[y][x].rouge = static_cast<Composante>(r);
@@ -223,16 +256,16 @@ void flouter_image(const Image_PNG& image_source, Image_PNG& image_destination, 
 void creer_animation_fondu_noir(const string& chemin_image, const string& chemin_destination, size_t nb_etapes) {
     creer_dossiers_sortie(chemin_destination);
 
-    Image_PNG image_source = charger_PNG(chemin_image);
     string nom_image = extraire_nom_fichier(chemin_image);
-    Image_PNG image_tampon = creer_PNG(image_source.hauteur, image_source.largeur);
+    Image_PNG image_source = charger_PNG(chemin_image);
+    Image_PNG image_destination = creer_PNG(image_source.hauteur, image_source.largeur);
 
     for(size_t i = 0; i < nb_etapes; i++) {
         double ratio = 1.0 - (static_cast<double>(i) / (nb_etapes - 1));
-        assombrir_image(image_source, image_tampon, ratio);
+        assombrir_image(image_source, image_destination, ratio);
         sauver_PNG(
             chemin_destination + "/images/" + nom_image + "_" +
-            to_string(i) + ".png", image_tampon
+            to_string(i) + ".png", image_destination
         );
     }
 
@@ -246,16 +279,16 @@ void creer_animation_fondu_noir(const string& chemin_image, const string& chemin
 void creer_animation_fondu_niveaux_gris(const string& chemin_image, const string& chemin_destination, size_t nb_etapes) {
     creer_dossiers_sortie(chemin_destination);
 
-    Image_PNG image_source = charger_PNG(chemin_image);
     string nom_image = extraire_nom_fichier(chemin_image);
-    Image_PNG image_tampon = creer_PNG(image_source.hauteur, image_source.largeur);
+    Image_PNG image_source = charger_PNG(chemin_image);
+    Image_PNG image_destination = creer_PNG(image_source.hauteur, image_source.largeur);
 
     for(size_t i = 0; i < nb_etapes; i++) {
         double ratio = 1.0 - (static_cast<double>(i) / (nb_etapes - 1));
-        convertir_niveaux_gris(image_source, image_tampon, ratio);
+        convertir_niveaux_gris(image_source, image_destination, ratio);
         sauver_PNG(
             chemin_destination + "/images/" + nom_image + "_" +
-            to_string(i) + ".png", image_tampon
+            to_string(i) + ".png", image_destination
         );
     }
 
@@ -269,16 +302,16 @@ void creer_animation_fondu_niveaux_gris(const string& chemin_image, const string
 void creer_animation_fondu_bruitage(const string& chemin_image, const string& chemin_destination, size_t nb_etapes, double intensite_max) {
     creer_dossiers_sortie(chemin_destination);
 
-    Image_PNG image_source = charger_PNG(chemin_image);
     string nom_image = extraire_nom_fichier(chemin_image);
-    Image_PNG image_tampon = creer_PNG(image_source.hauteur, image_source.largeur);
+    Image_PNG image_source = charger_PNG(chemin_image);
+    Image_PNG image_destination = creer_PNG(image_source.hauteur, image_source.largeur);
 
     for(size_t i = 0; i < nb_etapes; i++) {
         double intensite = (intensite_max / nb_etapes) * (i + 1);
-        bruiter_image(image_source, image_tampon, intensite);
+        bruiter_image(image_source, image_destination, intensite);
         sauver_PNG(
             chemin_destination + "/images/" + nom_image + "_" +
-            to_string(i) + ".png", image_tampon
+            to_string(i) + ".png", image_destination
         );
     }
 
@@ -292,13 +325,14 @@ void creer_animation_fondu_bruitage(const string& chemin_image, const string& ch
 void creer_animation_fondu_flou(const string& chemin_image, const string& chemin_destination, size_t nb_etapes, size_t intensite_max) {
     creer_dossiers_sortie(chemin_destination);
 
-    Image_PNG image_source = charger_PNG(chemin_image);
     string nom_image = extraire_nom_fichier(chemin_image);
+    Image_PNG image_source = charger_PNG(chemin_image);
     Image_PNG image_tampon = creer_PNG(image_source.hauteur, image_source.largeur);
+    Image_PNG image_destination = creer_PNG(image_source.hauteur, image_source.largeur);
 
     for(size_t i = 0; i < nb_etapes; i++) {
         double intensite = (intensite_max / nb_etapes) * (i + 1);
-        flouter_image(image_source, image_tampon, intensite);
+        flouter_image(image_source, image_tampon, image_destination, intensite);
         sauver_PNG(
             chemin_destination + "/images/" + nom_image + "_" +
             to_string(i) + ".png", image_tampon
