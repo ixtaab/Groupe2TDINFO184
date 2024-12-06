@@ -1,0 +1,4 @@
+creer_animation_retrecir
+Schemin_destination = ./test_out/animation_retrecir
+Schemin_image = ./test_ressources/images/grenouille.png
+Enb_etapes = 5
