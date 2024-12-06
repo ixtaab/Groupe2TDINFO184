@@ -123,6 +123,8 @@ Config lire_config(string fichier_nom) {
 }
 
 void assombrir_image(const Image_PNG& image_source, Image_PNG& image_destination, double ratio) {
+    assert(image_source.largeur == image_destination.largeur);
+    assert(image_source.hauteur == image_destination.hauteur);
     for (size_t y = 0; y < image_source.hauteur; ++y) {
         for (size_t x = 0; x < image_source.largeur; ++x) {
             RVB pixel_source = image_source.pixels[y][x];
@@ -136,6 +138,8 @@ void assombrir_image(const Image_PNG& image_source, Image_PNG& image_destination
 }
 
 void convertir_niveaux_gris(const Image_PNG& image_source, Image_PNG& image_destination, double ratio) {
+    assert(image_source.largeur == image_destination.largeur);
+    assert(image_source.hauteur == image_destination.hauteur);
     for (size_t y = 0; y < image_source.hauteur; ++y) {
         for (size_t x = 0; x < image_source.largeur; ++x) {
             RVB pixel = image_source.pixels[y][x];
@@ -150,6 +154,8 @@ void convertir_niveaux_gris(const Image_PNG& image_source, Image_PNG& image_dest
 }
 
 void bruiter_image(const Image_PNG& image_source, Image_PNG& image_destination, int intensite) {
+    assert(image_source.largeur == image_destination.largeur);
+    assert(image_source.hauteur == image_destination.hauteur);
     // TODO: a completer pour la consigne du projet
     for(size_t y = 0; y < image_source.hauteur; y++) {
         for(size_t x = 0; x < image_source.largeur; x++) {
@@ -189,15 +195,15 @@ void flouter_image(const Image_PNG& image_source, Image_PNG& image_destination, 
 
             for(int ry = -kernel_size/2; ry <= kernel_size/2; ry++) {
                 for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
-                    int offset_x = x + rx;
-                    int offset_y = y + ry;
+                    int resolved_x = x + rx;
+                    int resolved_y = y + ry;
 
-                    if (offset_x < 0) offset_x = x - rx;
-                    if (offset_y < 0) offset_y = y - ry;
-                    if (offset_x >= image_source.largeur) offset_x = x - rx;
-                    if (offset_y >= image_source.hauteur) offset_y = y - ry;
-                    
-                    RVB r_pixel = image_source.pixels[offset_y][offset_x];
+                    if (resolved_x < 0) resolved_x = x - rx;
+                    if (resolved_y < 0) resolved_y = y - ry;
+                    if (resolved_x >= image_source.largeur) resolved_x = x - rx;
+                    if (resolved_y >= image_source.hauteur) resolved_y = y - ry;
+
+                    RVB r_pixel = image_source.pixels[resolved_y][resolved_x];
 
                     double factor = gaussian_function(ry, rx, intensite) / factor_sum;
 
@@ -225,7 +231,7 @@ void creer_animation_fondu_noir(const string& chemin_image, const string& chemin
         double ratio = 1.0 - (static_cast<double>(i) / (nb_etapes - 1));
         assombrir_image(image_source, image_tampon, ratio);
         sauver_PNG(
-            chemin_destination + "/images/" + nom_image + "_" + 
+            chemin_destination + "/images/" + nom_image + "_" +
             to_string(i) + ".png", image_tampon
         );
     }
@@ -248,7 +254,7 @@ void creer_animation_fondu_niveaux_gris(const string& chemin_image, const string
         double ratio = 1.0 - (static_cast<double>(i) / (nb_etapes - 1));
         convertir_niveaux_gris(image_source, image_tampon, ratio);
         sauver_PNG(
-            chemin_destination + "/images/" + nom_image + "_" + 
+            chemin_destination + "/images/" + nom_image + "_" +
             to_string(i) + ".png", image_tampon
         );
     }
@@ -266,12 +272,12 @@ void creer_animation_fondu_bruitage(const string& chemin_image, const string& ch
     Image_PNG image_source = charger_PNG(chemin_image);
     string nom_image = extraire_nom_fichier(chemin_image);
     Image_PNG image_tampon = creer_PNG(image_source.hauteur, image_source.largeur);
-    
+
     for(size_t i = 0; i < nb_etapes; i++) {
         double intensite = (intensite_max / nb_etapes) * (i + 1);
         bruiter_image(image_source, image_tampon, intensite);
         sauver_PNG(
-            chemin_destination + "/images/" + nom_image + "_" + 
+            chemin_destination + "/images/" + nom_image + "_" +
             to_string(i) + ".png", image_tampon
         );
     }
@@ -294,7 +300,7 @@ void creer_animation_fondu_flou(const string& chemin_image, const string& chemin
         double intensite = (intensite_max / nb_etapes) * (i + 1);
         flouter_image(image_source, image_tampon, intensite);
         sauver_PNG(
-            chemin_destination + "/images/" + nom_image + "_" + 
+            chemin_destination + "/images/" + nom_image + "_" +
             to_string(i) + ".png", image_tampon
         );
     }
@@ -314,36 +320,36 @@ int main(int argc, char *argv[]) {
     Config config = lire_config(argv[1]);
     string nom_fonction = config.nom_fonction;
 
-    optional<string> chemin_destination = trouver_param_chaine(config, "Schemin_destination");
-    optional<string> chemin_image = trouver_param_chaine(config, "Schemin_image");
+    string chemin_destination = trouver_param_chaine(config, "Schemin_destination").value_or(nom_fonction);
+    string chemin_image = trouver_param_chaine(config, "Schemin_image").value_or("image.png");
     optional<size_t> nb_etapes = trouver_param_entier(config, "Enb_etapes");
 
     if (nom_fonction == "creer_animation_fondu_noir") {
         creer_animation_fondu_noir(
-            chemin_image.value_or("image.png"), 
-            chemin_destination.value_or("destination"), 
+            chemin_image,
+            chemin_destination,
             nb_etapes.value_or(5)
         );
     } else if (nom_fonction == "creer_animation_fondu_niveaux_gris") {
         creer_animation_fondu_niveaux_gris(
-            chemin_image.value_or("image.png"), 
-            chemin_destination.value_or("destination"), 
+            chemin_image,
+            chemin_destination,
             nb_etapes.value_or(5)
         );
     } else if (nom_fonction == "creer_animation_fondu_bruitage") {
         optional<size_t> intensite_max = trouver_param_entier(config, "Eintensite_max");
         creer_animation_fondu_bruitage(
-            chemin_image.value_or("image.png"), 
-            chemin_destination.value_or("destination"), 
-            nb_etapes.value_or(5), 
+            chemin_image,
+            chemin_destination,
+            nb_etapes.value_or(5),
             intensite_max.value_or(5)
         );
     } else if (nom_fonction == "creer_animation_fondu_flou") {
         optional<size_t> intensite_max = trouver_param_entier(config, "Eintensite_max");
         creer_animation_fondu_flou(
-            chemin_image.value_or("image.png"), 
-            chemin_destination.value_or("destination"), 
-            nb_etapes.value_or(5), 
+            chemin_image,
+            chemin_destination,
+            nb_etapes.value_or(5),
             intensite_max.value_or(5)
         );
     }

@@ -165,8 +165,21 @@ Image_PNG charger_PNG(const std::string nom_fichier) {
         }
     }
     else {
-	    for (i=0, j=0; i<img.hauteur; (j==3*img.largeur)?j=0,++i:++j) {
-           rows[i][j] = png_get_rows(png_ptr,info_ptr)[i][j];
+        // // incorrect
+	    // for (i=0, j=0; i<img.hauteur; (j==3*img.largeur)?j=0,++i:++j) {
+        //    rows[i][j] = png_get_rows(png_ptr,info_ptr)[i][j];
+        // }
+
+        // // correct
+        // for (i=0, j=0; i<img.hauteur; (j==(3*img.largeur-1))?j=0,++i:++j) {
+        //     rows[i][j] = png_get_rows(png_ptr,info_ptr)[i][j];
+        // }
+
+        // correct
+        for (int i = 0; i < img.hauteur; i++) {
+            for (int j = 0; j < 3 * img.largeur; j++) {
+                rows[i][j] = png_get_rows(png_ptr, info_ptr)[i][j];
+            }
         }
     }
 	img.pixels = reinterpret_cast<RVB**>(rows); // transtypage

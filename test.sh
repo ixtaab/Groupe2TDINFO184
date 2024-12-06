@@ -20,4 +20,4 @@ echo "[6/7] test fondu_bruitage configuration."
 ./bin/program ./test_ressources/configs/fondu_flou.txt
 echo "[7/7] test fondu_flou configuration."
 
-echo "all test completed"
+echo "all tests completed"
