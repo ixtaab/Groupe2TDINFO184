@@ -4,4 +4,5 @@
     "files.associations": {
         "optional": "cpp"
     },
+    "C_Cpp.errorSquiggles": "disabled",
 }

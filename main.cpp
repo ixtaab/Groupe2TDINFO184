@@ -283,6 +283,18 @@ void retrecir_image(const Image_PNG& image_source, Image_PNG& image_destination,
         }
     }
 }
+void masquer_image(const Image_PNG& image_source, Image_PNG& image_destination, size_t rgb[3]){
+    
+
+
+
+
+
+
+
+
+}
+
 
 
 void creer_animation_fondu_noir(const string& chemin_image, const string& chemin_destination, size_t nb_etapes) {
@@ -399,6 +411,30 @@ void creer_animation_retrecir(const string& chemin_image, const string& chemin_d
         chemin_destination + "/gif/" + nom_image,
         0, nb_etapes - 1, 15, 0
     );
+}
+
+void creer_animation_fondu_masque(const string& chemin_image, const string& chemin_destination, size_t nb_etapes){
+
+    string nom_image = extraire_nom_fichier(chemin_image);
+    Image_PNG image_source = charger_PNG(chemin_image);
+    Image_PNG image_destination = creer_PNG(image_source.hauteur, image_source.largeur);
+    size_t rgb[3] =  {128,0,128};
+
+    for(size_t i = 0; i < nb_etapes; i++) {
+        masquer_image(image_source, image_destination,rgb);
+        sauver_PNG(
+            chemin_destination + "/images/" + nom_image + "_" +
+            to_string(i) + ".png", image_destination
+        );
+    }
+
+    generer_GIF(
+        chemin_destination + "/images/" + nom_image + "_",
+        chemin_destination + "/gif/" + nom_image,
+        0, nb_etapes - 1, 15, 0
+    );
+
+
 }
 
 int main(int argc, char *argv[]) {
