@@ -176,8 +176,8 @@ Image_PNG charger_PNG(const std::string nom_fichier) {
         // }
 
         // correct
-        for (int i = 0; i < img.hauteur; i++) {
-            for (int j = 0; j < 3 * img.largeur; j++) {
+        for (size_t i = 0; i < img.hauteur; i++) {
+            for (size_t j = 0; j < 3 * img.largeur; j++) {
                 rows[i][j] = png_get_rows(png_ptr, info_ptr)[i][j];
             }
         }
@@ -267,5 +267,5 @@ void generer_GIF(const std::string & nom_pngs, const std::string & nom_gif, size
    for (size_t i= premier; i <= dernier; ++i)
       concat_inputs += nom_pngs + std::to_string(i) + ".png ";
 
-    int result = std::system(("convert -delay " + std::to_string(delay) + " -loop " + std::to_string(loop) + " " + concat_inputs + nom_gif + ".gif").c_str());
+    [[maybe_unused]] int result = std::system(("convert -delay " + std::to_string(delay) + " -loop " + std::to_string(loop) + " " + concat_inputs + nom_gif + ".gif").c_str());
 }

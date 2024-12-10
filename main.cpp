@@ -186,8 +186,8 @@ void flouter_image(
     size_t largeur = image_source.largeur;
 
     int kernel_size = static_cast<int>(std::ceil(3 * intensite)) + 1;
-    double factor_sum = 0;
 
+    double factor_sum = 0;
     for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
         factor_sum += gaussian_function(rx, 0, intensite);
     }
@@ -195,8 +195,6 @@ void flouter_image(
     #pragma omp parallel for
     for(size_t y = 0; y < hauteur; y++) {
         for(size_t x = 0; x < largeur; x++) {
-            RVB pixel = image_source.pixels[y][x];
-
             double r = 0;
             double g = 0;
             double b = 0;
@@ -205,7 +203,7 @@ void flouter_image(
                 int resolved_y = y + ry;
 
                 if (resolved_y < 0) resolved_y = y - ry;
-                if (resolved_y >= hauteur) resolved_y = y - ry;
+                if (resolved_y >= static_cast<int>(hauteur)) resolved_y = y - ry;
 
                 RVB r_pixel = image_source.pixels[resolved_y][x];
 
@@ -225,8 +223,6 @@ void flouter_image(
     #pragma omp parallel for
     for(size_t y = 0; y < hauteur; y++) {
         for(size_t x = 0; x < largeur; x++) {
-            RVB pixel = image_tampon.pixels[y][x];
-
             double r = 0;
             double g = 0;
             double b = 0;
@@ -235,7 +231,7 @@ void flouter_image(
                 int resolved_x = x + rx;
 
                 if (resolved_x < 0) resolved_x = x - rx;
-                if (resolved_x >= largeur) resolved_x = x - rx;
+                if (resolved_x >= static_cast<int>(largeur)) resolved_x = x - rx;
 
                 RVB r_pixel = image_tampon.pixels[y][resolved_x];
 
@@ -284,7 +280,6 @@ void retrecir_image(const Image_PNG& image_source, Image_PNG& image_destination,
     }
 }
 
-
 void creer_animation_fondu_noir(const string& chemin_image, const string& chemin_destination, size_t nb_etapes) {
     creer_dossiers_sortie(chemin_destination);
 
@@ -331,7 +326,12 @@ void creer_animation_fondu_niveaux_gris(const string& chemin_image, const string
     );
 }
 
-void creer_animation_fondu_bruitage(const string& chemin_image, const string& chemin_destination, size_t nb_etapes, double intensite_max) {
+void creer_animation_fondu_bruitage(
+    const string& chemin_image, 
+    const string& chemin_destination, 
+    size_t nb_etapes, 
+    double intensite_max
+) {
     creer_dossiers_sortie(chemin_destination);
 
     string nom_image = extraire_nom_fichier(chemin_image);
@@ -354,7 +354,12 @@ void creer_animation_fondu_bruitage(const string& chemin_image, const string& ch
     );
 }
 
-void creer_animation_fondu_flou(const string& chemin_image, const string& chemin_destination, size_t nb_etapes, size_t intensite_max) {
+void creer_animation_fondu_flou(
+    const string& chemin_image, 
+    const string& chemin_destination, 
+    size_t nb_etapes, 
+    size_t intensite_max
+) {
     creer_dossiers_sortie(chemin_destination);
 
     string nom_image = extraire_nom_fichier(chemin_image);
@@ -401,6 +406,93 @@ void creer_animation_retrecir(const string& chemin_image, const string& chemin_d
     );
 }
 
+void masquer_rideau(
+    const Image_PNG& image_source, 
+    Image_PNG& image_destination, 
+    size_t ligne_courante, 
+    RVB couleur
+) {
+    assert(image_source.largeur == image_destination.largeur);
+    assert(image_source.hauteur == image_destination.hauteur);
+    
+    for (size_t y = 0; y < image_source.hauteur; ++y) {
+        for (size_t x = 0; x < image_source.largeur; ++x) {
+            image_destination.pixels[y][x] = image_source.pixels[y][x];
+        }
+    }
+    
+    for (size_t y = 0; y <= ligne_courante && y < image_source.hauteur; ++y) {
+        for (size_t x = 0; x < image_source.largeur; ++x) {
+            image_destination.pixels[y][x] = couleur;
+        }
+    }
+}
+
+void masquer_persiennes(
+    const Image_PNG& image_source, 
+    Image_PNG& image_destination, 
+    double intensite, 
+    size_t separation, 
+    size_t decalage, 
+    RVB couleur
+) {
+    assert(image_source.largeur == image_destination.largeur);
+    assert(image_source.hauteur == image_destination.hauteur);
+    
+    for (size_t y = 0; y < image_source.hauteur; ++y) {
+        for (size_t x = 0; x < image_source.largeur; ++x) {
+            image_destination.pixels[y][x] = image_source.pixels[y][x];
+        }
+    }
+    
+    RVB couleur_actuelle = {
+        static_cast<Composante>(couleur.rouge * intensite),
+        static_cast<Composante>(couleur.vert * intensite),
+        static_cast<Composante>(couleur.bleu * intensite)
+    };
+    
+    for (size_t y = 0; y < image_source.hauteur; y++) {
+        for (size_t x = 0; x < image_source.largeur; x += separation) {
+            image_destination.pixels[y][min(x + decalage, image_source.largeur - 1)] = couleur_actuelle;
+        }
+    }
+}
+
+void creer_animation_masquage(
+    const string& chemin_image, 
+    const string& chemin_destination, 
+    size_t nb_etapes, 
+    RVB couleur, 
+    bool mode_rideau, 
+    size_t K = 1
+) {
+    creer_dossiers_sortie(chemin_destination);
+
+    string nom_image = extraire_nom_fichier(chemin_image);
+    Image_PNG image_source = charger_PNG(chemin_image);
+
+    for(size_t i = 0; i < nb_etapes; i++) {
+        if (mode_rideau) {
+            size_t ligne_courante = (i * image_source.hauteur) / (nb_etapes - 1);
+            masquer_rideau(image_source, image_source, ligne_courante, couleur);
+        } else {
+            double intensite = static_cast<double>(i) / (nb_etapes - 1);
+            masquer_persiennes(image_source, image_source, intensite, K, i, couleur);
+        }
+
+        sauver_PNG(
+            chemin_destination + "/images/" + nom_image + "_" +
+            to_string(i) + ".png", image_source
+        );
+    }
+
+    generer_GIF(
+        chemin_destination + "/images/" + nom_image + "_",
+        chemin_destination + "/gif/" + nom_image,
+        0, nb_etapes - 1, 15, 0
+    );
+}
+
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         throw runtime_error("Usage: " + string(argv[0]) + " fichier_config");
@@ -411,26 +503,26 @@ int main(int argc, char *argv[]) {
 
     string chemin_destination = trouver_param_chaine(config, "Schemin_destination").value_or(nom_fonction);
     string chemin_image = trouver_param_chaine(config, "Schemin_image").value_or("image.png");
-    optional<size_t> nb_etapes = trouver_param_entier(config, "Enb_etapes");
+    size_t nb_etapes = trouver_param_entier(config, "Enb_etapes").value_or(5);
 
     if (nom_fonction == "creer_animation_fondu_noir") {
         creer_animation_fondu_noir(
             chemin_image,
             chemin_destination,
-            nb_etapes.value_or(5)
+            nb_etapes
         );
     } else if (nom_fonction == "creer_animation_fondu_niveaux_gris") {
         creer_animation_fondu_niveaux_gris(
             chemin_image,
             chemin_destination,
-            nb_etapes.value_or(5)
+            nb_etapes
         );
     } else if (nom_fonction == "creer_animation_fondu_bruitage") {
         optional<size_t> intensite_max = trouver_param_entier(config, "Eintensite_max");
         creer_animation_fondu_bruitage(
             chemin_image,
             chemin_destination,
-            nb_etapes.value_or(5),
+            nb_etapes,
             intensite_max.value_or(5)
         );
     } else if (nom_fonction == "creer_animation_fondu_flou") {
@@ -438,14 +530,27 @@ int main(int argc, char *argv[]) {
         creer_animation_fondu_flou(
             chemin_image,
             chemin_destination,
-            nb_etapes.value_or(5),
+            nb_etapes,
             intensite_max.value_or(5)
         );
     } else if (nom_fonction == "creer_animation_retrecir") {
         creer_animation_retrecir(
             chemin_image,
             chemin_destination,
-            nb_etapes.value_or(5)
+            nb_etapes
+        );
+    } else if (nom_fonction == "creer_animation_masquage") {
+        Composante couleur_r = static_cast<Composante>(trouver_param_entier(config, "Ecouleur_r").value_or(5));
+        Composante couleur_v = static_cast<Composante>(trouver_param_entier(config, "Ecouleur_v").value_or(5));
+        Composante couleur_b = static_cast<Composante>(trouver_param_entier(config, "Ecouleur_b").value_or(5));
+
+        creer_animation_masquage(
+            chemin_image,
+            chemin_destination,
+            nb_etapes,
+            {couleur_r, couleur_v, couleur_b},
+            true,
+            15
         );
     }
 }

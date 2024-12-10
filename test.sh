@@ -25,7 +25,11 @@ time ./bin/program ./test_ressources/configs/fondu_flou.txt
 echo ""
 
 echo "[8/8] testing fondu_noir_retrecir configuration..."
-time ./bin/program ./test_ressources/configs/fondu_noir_retrecir.txt
+time ./bin/program ./test_ressources/configs/animation_retrecir.txt
+echo ""
+
+echo "[8/8] testing animation_masquage configuration..."
+time ./bin/program ./test_ressources/configs/animation_masquage.txt
 echo ""
 
 echo "all tests completed"

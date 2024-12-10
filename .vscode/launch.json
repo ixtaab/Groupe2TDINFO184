@@ -6,7 +6,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/program",
-            "args": ["./test_ressources/configs/fondu_noir.txt"],
+            "args": ["./test_ressources/configs/animation_masquage.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],
