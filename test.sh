@@ -16,20 +16,28 @@ echo "[5/8] testing fondu_noir configuration..."
 time ./bin/program ./test_ressources/configs/fondu_niveaux_gris.txt
 echo ""
 
-echo "[6/8] testing fondu_bruitage configuration..."
-time ./bin/program ./test_ressources/configs/fondu_bruitage.txt
+echo "[6/8] testing fondu_bruitage_alteration configuration..."
+time ./bin/program ./test_ressources/configs/fondu_bruitage_alteration.txt
 echo ""
 
-echo "[7/8] testing fondu_flou configuration..."
+echo "[7/8] testing fondu_bruitage_remplacement configuration..."
+time ./bin/program ./test_ressources/configs/fondu_bruitage_remplacement.txt
+echo ""
+
+echo "[8/8] testing fondu_flou configuration..."
 time ./bin/program ./test_ressources/configs/fondu_flou.txt
 echo ""
 
-echo "[8/8] testing fondu_noir_retrecir configuration..."
+echo "[9/8] testing fondu_noir_retrecir configuration..."
 time ./bin/program ./test_ressources/configs/animation_retrecir.txt
 echo ""
 
-echo "[8/8] testing animation_masquage configuration..."
-time ./bin/program ./test_ressources/configs/animation_masquage.txt
+echo "[10/8] testing animation_masquage_rideau configuration..."
+time ./bin/program ./test_ressources/configs/animation_masquage_rideau.txt
+echo ""
+
+echo "[11/8] testing animation_masquage_persiennes configuration..."
+time ./bin/program ./test_ressources/configs/animation_masquage_persiennes.txt
 echo ""
 
 echo "all tests completed"

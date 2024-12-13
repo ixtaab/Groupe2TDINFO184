@@ -19,7 +19,7 @@ void flouter_image(
 
     double somme_facteurs = 0.0;
     std::vector<double> facteurs_gaussien(rayon_kernel + 1);
-    for(int i = 0; i <= rayon_kernel; ++i) {
+    for(int i = 0; i <= rayon_kernel; i++) {
         facteurs_gaussien[i] = fonction_gaussienne(i, 0, intensity);
         somme_facteurs += (i == 0) ? facteurs_gaussien[i] : 2 * facteurs_gaussien[i];
     }
@@ -32,8 +32,8 @@ void flouter_image(
     };
 
     #pragma omp parallel for
-    for(size_t y = 0; y < hauteur; ++y) {
-        for(size_t x = 0; x < largeur; ++x) {
+    for(size_t y = 0; y < hauteur; y++) {
+        for(size_t x = 0; x < largeur; x++) {
             double r = 0.0, g = 0.0, b = 0.0;
             
             for(int dy = -rayon_kernel; dy <= rayon_kernel; ++dy) {
@@ -55,8 +55,8 @@ void flouter_image(
     }
 
     #pragma omp parallel for
-    for(size_t y = 0; y < hauteur; ++y) {
-        for(size_t x = 0; x < largeur; ++x) {
+    for(size_t y = 0; y < hauteur; y++) {
+        for(size_t x = 0; x < largeur; x++) {
             double r = 0.0, g = 0.0, b = 0.0;
             
             for(int dx = -rayon_kernel; dx <= rayon_kernel; ++dx) {

@@ -18,22 +18,22 @@ struct Config {
     ParamChaine params_chaine[10];
 };
 
-optional<int> trouver_param_entier(const Config& config, const string& nom) {
+int trouver_param_entier(const Config& config, const string& nom, int defaut) {
     for(size_t i = 0; i < config.nb_params_entier; i++) {
         if (config.params_entier[i].nom == nom) {
             return config.params_entier[i].valeur;
         }
     }
-    return nullopt;
+    return defaut;
 }
 
-optional<string> trouver_param_chaine(const Config& config, const string& nom) {
+string trouver_param_chaine(const Config& config, const string& nom, string defaut) {
     for(size_t i = 0; i < config.nb_params_chaine; i++) {
         if (config.params_chaine[i].nom == nom) {
             return config.params_chaine[i].valeur;
         }
     }
-    return nullopt;
+    return defaut;
 }
 
 void affichage_param_entier(ParamEntier params_entier) {
@@ -102,9 +102,9 @@ int main(int argc, char *argv[]) {
     Config config = lire_config(argv[1]);
     string nom_fonction = config.nom_fonction;
 
-    string chemin_destination = trouver_param_chaine(config, "Schemin_destination").value_or(nom_fonction);
-    string chemin_image = trouver_param_chaine(config, "Schemin_image").value_or("image.png");
-    size_t nb_etapes = trouver_param_entier(config, "Enb_etapes").value_or(5);
+    string chemin_destination = trouver_param_chaine(config, "Schemin_destination", nom_fonction);
+    string chemin_image = trouver_param_chaine(config, "Schemin_image", "image.png");
+    size_t nb_etapes = trouver_param_entier(config, "Enb_etapes", 5);
 
     if (nom_fonction == "creer_animation_fondu_noir") {
         creer_animation_fondu_noir(
@@ -119,20 +119,28 @@ int main(int argc, char *argv[]) {
             nb_etapes
         );
     } else if (nom_fonction == "creer_animation_fondu_bruitage") {
-        optional<size_t> intensite_max = trouver_param_entier(config, "Eintensite_max");
+        size_t intensite_max = trouver_param_entier(config, "Eintensite", 5);
+        string method = trouver_param_chaine(config, "Smethod", "alteration");
+        
+        BruitageMethod bruitage_method;
+        if (method == "alteration") bruitage_method = BruitageMethod::ALTERATION_ALEATOIRE;
+        else if (method == "remplacement") bruitage_method = BruitageMethod::REMPLACEMENT_ALEATOIRE;
+        else throw runtime_error("Invalid bruitage method: " + method);
+
         creer_animation_fondu_bruitage(
-            chemin_image,
-            chemin_destination,
-            nb_etapes,
-            intensite_max.value_or(5)
+            chemin_image, 
+            chemin_destination, 
+            nb_etapes, 
+            intensite_max, 
+            bruitage_method
         );
     } else if (nom_fonction == "creer_animation_fondu_flou") {
-        optional<size_t> intensite_max = trouver_param_entier(config, "Eintensite_max");
+        size_t intensite_max = trouver_param_entier(config, "Eintensite_max", 5);
         creer_animation_fondu_flou(
             chemin_image,
             chemin_destination,
             nb_etapes,
-            intensite_max.value_or(5)
+            intensite_max
         );
     } else if (nom_fonction == "creer_animation_retrecir") {
         creer_animation_retrecir(
@@ -141,17 +149,22 @@ int main(int argc, char *argv[]) {
             nb_etapes
         );
     } else if (nom_fonction == "creer_animation_masquage") {
-        Composante couleur_r = static_cast<Composante>(trouver_param_entier(config, "Ecouleur_r").value_or(5));
-        Composante couleur_v = static_cast<Composante>(trouver_param_entier(config, "Ecouleur_v").value_or(5));
-        Composante couleur_b = static_cast<Composante>(trouver_param_entier(config, "Ecouleur_b").value_or(5));
+        Composante couleur_r = static_cast<Composante>(trouver_param_entier(config, "Ecouleur_r", 0));
+        Composante couleur_v = static_cast<Composante>(trouver_param_entier(config, "Ecouleur_v", 0));
+        Composante couleur_b = static_cast<Composante>(trouver_param_entier(config, "Ecouleur_b", 0));
+        string method = trouver_param_chaine(config, "Smethod", "rideau");
+        
+        MasquageMethod masquage_method;
+        if (method == "rideau") masquage_method = MasquageMethod::RIDEAU;
+        else if (method == "persiennes") masquage_method = MasquageMethod::PERSIENNES;
+        else throw runtime_error("Invalid masquage method: " + method);
 
         creer_animation_masquage(
             chemin_image,
             chemin_destination,
             nb_etapes,
             {couleur_r, couleur_v, couleur_b},
-            true,
-            15
+            masquage_method
         );
     }
 }

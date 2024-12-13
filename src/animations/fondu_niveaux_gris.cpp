@@ -3,8 +3,8 @@
 void convertir_niveaux_gris(const Image_PNG& image_source, Image_PNG& image_destination, double ratio) {
     assert(image_source.largeur == image_destination.largeur);
     assert(image_source.hauteur == image_destination.hauteur);
-    for (size_t y = 0; y < image_source.hauteur; ++y) {
-        for (size_t x = 0; x < image_source.largeur; ++x) {
+    for (size_t y = 0; y < image_source.hauteur; y++) {
+        for (size_t x = 0; x < image_source.largeur; x++) {
             RVB pixel = image_source.pixels[y][x];
             double luminosite = pixel.rouge * 0.299 + pixel.vert * 0.587 + pixel.bleu * 0.114;
             image_destination.pixels[y][x] = {

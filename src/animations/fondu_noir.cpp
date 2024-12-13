@@ -3,8 +3,8 @@
 void assombrir_image(const Image_PNG& image_source, Image_PNG& image_destination, double ratio) {
     assert(image_source.largeur == image_destination.largeur);
     assert(image_source.hauteur == image_destination.hauteur);
-    for (size_t y = 0; y < image_source.hauteur; ++y) {
-        for (size_t x = 0; x < image_source.largeur; ++x) {
+    for (size_t y = 0; y < image_source.hauteur; y++) {
+        for (size_t x = 0; x < image_source.largeur; x++) {
             RVB pixel_source = image_source.pixels[y][x];
             image_destination.pixels[y][x] = {
                 static_cast<Composante>(pixel_source.rouge * ratio),

@@ -9,14 +9,14 @@ void masquer_rideau(
     assert(image_source.largeur == image_destination.largeur);
     assert(image_source.hauteur == image_destination.hauteur);
     
-    for (size_t y = 0; y < image_source.hauteur; ++y) {
-        for (size_t x = 0; x < image_source.largeur; ++x) {
+    for (size_t y = 0; y < image_source.hauteur; y++) {
+        for (size_t x = 0; x < image_source.largeur; x++) {
             image_destination.pixels[y][x] = image_source.pixels[y][x];
         }
     }
     
-    for (size_t y = 0; y <= ligne_courante && y < image_source.hauteur; ++y) {
-        for (size_t x = 0; x < image_source.largeur; ++x) {
+    for (size_t y = 0; y <= ligne_courante && y < image_source.hauteur; y++) {
+        for (size_t x = 0; x < image_source.largeur; x++) {
             image_destination.pixels[y][x] = couleur;
         }
     }
@@ -33,8 +33,8 @@ void masquer_persiennes(
     assert(image_source.largeur == image_destination.largeur);
     assert(image_source.hauteur == image_destination.hauteur);
     
-    for (size_t y = 0; y < image_source.hauteur; ++y) {
-        for (size_t x = 0; x < image_source.largeur; ++x) {
+    for (size_t y = 0; y < image_source.hauteur; y++) {
+        for (size_t x = 0; x < image_source.largeur; x++) {
             image_destination.pixels[y][x] = image_source.pixels[y][x];
         }
     }
@@ -56,9 +56,8 @@ void creer_animation_masquage(
     const string& chemin_image, 
     const string& chemin_destination, 
     size_t nb_etapes, 
-    RVB couleur, 
-    bool mode_rideau, 
-    size_t K
+    RVB couleur,
+    MasquageMethod method
 ) {
     creer_dossiers_sortie(chemin_destination);
 
@@ -66,12 +65,16 @@ void creer_animation_masquage(
     Image_PNG image_source = charger_PNG(chemin_image);
 
     for(size_t i = 0; i < nb_etapes; i++) {
-        if (mode_rideau) {
-            size_t ligne_courante = (i * image_source.hauteur) / (nb_etapes - 1);
-            masquer_rideau(image_source, image_source, ligne_courante, couleur);
-        } else {
-            double intensite = static_cast<double>(i) / (nb_etapes - 1);
-            masquer_persiennes(image_source, image_source, intensite, K, i, couleur);
+        switch (method) {
+            case MasquageMethod::RIDEAU: {
+                size_t ligne_courante = (i * image_source.hauteur) / (nb_etapes - 1);
+                masquer_rideau(image_source, image_source, ligne_courante, couleur);
+                break;
+            }
+            case MasquageMethod::PERSIENNES: {
+                double intensite = static_cast<double>(i) / (nb_etapes - 1);
+                masquer_persiennes(image_source, image_source, intensite, nb_etapes, i, couleur);
+            }
         }
 
         sauver_PNG(

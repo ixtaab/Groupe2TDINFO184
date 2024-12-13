@@ -1,0 +1,5 @@
+creer_animation_masquage
+Schemin_destination = ./test_out/animation_masquage_rideau
+Schemin_image = ./test_ressources/images/grenouille.png
+Enb_etapes = 5
+Smethod = rideau

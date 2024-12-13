@@ -1,0 +1,6 @@
+creer_animation_fondu_bruitage
+Schemin_destination = ./test_out/fondu_bruitage_remplacement
+Schemin_image = ./test_ressources/images/grenouille.png
+Enb_etapes = 5
+Eintensite = 20
+Smethod = remplacement
