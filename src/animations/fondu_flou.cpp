@@ -1,6 +1,6 @@
 #include "animations.hpp"
 
-double gaussian_function(int x, int y, double sigma) {
+double fonction_gaussienne(int x, int y, double sigma) {
     return (1.0 / (2.0 * M_PI * sigma * sigma)) * exp(-(x * x + y * y) / (2.0 * sigma * sigma));
 }
 
@@ -8,76 +8,72 @@ void flouter_image(
     const Image_PNG& image_source, 
     Image_PNG& image_destination, 
     Image_PNG& image_tampon, 
-    double intensite
+    double intensity
 ) {
-    assert(image_source.largeur == image_destination.largeur);
-    assert(image_source.hauteur == image_destination.hauteur);
-    assert(image_source.largeur == image_tampon.largeur);
-    assert(image_source.hauteur == image_tampon.hauteur);
+    assert(image_destination.largeur == image_tampon.largeur);
+    assert(image_destination.hauteur == image_tampon.hauteur);
+    const size_t largeur = image_source.largeur;
+    const size_t hauteur = image_source.hauteur;
 
-    size_t hauteur = image_source.largeur;
-    size_t largeur = image_source.largeur;
+    const int rayon_kernel = static_cast<int>(ceil(3 * intensity)) / 2;
 
-    int kernel_size = static_cast<int>(ceil(3 * intensite)) + 1;
-
-    double factor_sum = 0;
-    for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
-        factor_sum += gaussian_function(rx, 0, intensite);
+    double somme_facteurs = 0.0;
+    std::vector<double> facteurs_gaussien(rayon_kernel + 1);
+    for(int i = 0; i <= rayon_kernel; ++i) {
+        facteurs_gaussien[i] = fonction_gaussienne(i, 0, intensity);
+        somme_facteurs += (i == 0) ? facteurs_gaussien[i] : 2 * facteurs_gaussien[i];
     }
+    const double facteur_normaliser = 1.0 / somme_facteurs;
+
+    auto refleter_coordonnee = [](int coord, int size) {
+        if (coord < 0) return -coord;
+        if (coord >= size) return 2 * size - coord - 2;
+        return coord;
+    };
 
     #pragma omp parallel for
-    for(size_t y = 0; y < hauteur; y++) {
-        for(size_t x = 0; x < largeur; x++) {
-            double r = 0;
-            double g = 0;
-            double b = 0;
-
-            for(int ry = -kernel_size/2; ry <= kernel_size/2; ry++) {
-                int resolved_y = y + ry;
-
-                if (resolved_y < 0) resolved_y = y - ry;
-                if (resolved_y >= static_cast<int>(hauteur)) resolved_y = y - ry;
-
-                RVB r_pixel = image_source.pixels[resolved_y][x];
-
-                double factor = gaussian_function(0, ry, intensite) / factor_sum;
-
-                r += static_cast<double>(r_pixel.rouge) * factor;
-                g += static_cast<double>(r_pixel.vert)  * factor;
-                b += static_cast<double>(r_pixel.bleu)  * factor;
+    for(size_t y = 0; y < hauteur; ++y) {
+        for(size_t x = 0; x < largeur; ++x) {
+            double r = 0.0, g = 0.0, b = 0.0;
+            
+            for(int dy = -rayon_kernel; dy <= rayon_kernel; ++dy) {
+                const int ny = refleter_coordonnee(static_cast<int>(y) + dy, hauteur);
+                const double facteur = facteurs_gaussien[abs(dy)] * facteur_normaliser;
+                const RVB& pixel = image_source.pixels[ny % hauteur][x];
+                
+                r += pixel.rouge * facteur;
+                g += pixel.vert * facteur;
+                b += pixel.bleu * facteur;
             }
-
-            image_tampon.pixels[y][x].rouge = static_cast<Composante>(r);
-            image_tampon.pixels[y][x].vert  = static_cast<Composante>(g);
-            image_tampon.pixels[y][x].bleu  = static_cast<Composante>(b);
+            
+            image_tampon.pixels[y][x] = {
+                static_cast<Composante>(r),
+                static_cast<Composante>(g),
+                static_cast<Composante>(b)
+            };
         }
     }
 
     #pragma omp parallel for
-    for(size_t y = 0; y < hauteur; y++) {
-        for(size_t x = 0; x < largeur; x++) {
-            double r = 0;
-            double g = 0;
-            double b = 0;
-
-            for(int rx = -kernel_size/2; rx <= kernel_size/2; rx++) {
-                int resolved_x = x + rx;
-
-                if (resolved_x < 0) resolved_x = x - rx;
-                if (resolved_x >= static_cast<int>(largeur)) resolved_x = x - rx;
-
-                RVB r_pixel = image_tampon.pixels[y][resolved_x];
-
-                double factor = gaussian_function(rx, 0, intensite) / factor_sum;
-
-                r += static_cast<double>(r_pixel.rouge) * factor;
-                g += static_cast<double>(r_pixel.vert)  * factor;
-                b += static_cast<double>(r_pixel.bleu)  * factor;
+    for(size_t y = 0; y < hauteur; ++y) {
+        for(size_t x = 0; x < largeur; ++x) {
+            double r = 0.0, g = 0.0, b = 0.0;
+            
+            for(int dx = -rayon_kernel; dx <= rayon_kernel; ++dx) {
+                const int nx = refleter_coordonnee(static_cast<int>(x) + dx, largeur);
+                const double facteur = facteurs_gaussien[abs(dx)] * facteur_normaliser;
+                const RVB& pixel = image_tampon.pixels[y][nx % largeur];
+                
+                r += pixel.rouge * facteur;
+                g += pixel.vert * facteur;
+                b += pixel.bleu * facteur;
             }
-
-            image_destination.pixels[y][x].rouge = static_cast<Composante>(r);
-            image_destination.pixels[y][x].vert  = static_cast<Composante>(g);
-            image_destination.pixels[y][x].bleu  = static_cast<Composante>(b);
+            
+            image_destination.pixels[y][x] = {
+                static_cast<Composante>(r),
+                static_cast<Composante>(g),
+                static_cast<Composante>(b)
+            };
         }
     }
 }
