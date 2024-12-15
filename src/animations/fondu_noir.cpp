@@ -37,3 +37,43 @@ void creer_animation_fondu_noir(const string& chemin_image, const string& chemin
         0, nb_etapes - 1, 15, 0
     );
 }
+
+void creer_animation_transition_noir(
+    const string& chemin_image_source,
+    const string& chemin_image_cible, 
+    const string& chemin_destination, 
+    size_t nb_etapes
+) {
+    creer_dossiers_sortie(chemin_destination);
+
+    string nom_image = extraire_nom_fichier(chemin_image_source);
+    Image_PNG image_source = charger_PNG(chemin_image_source);
+    Image_PNG image_cible = charger_PNG(chemin_image_cible);
+    Image_PNG image_destination = creer_PNG(image_source.hauteur, image_source.largeur);
+
+    size_t nb_etapes_demi = nb_etapes / 2;
+    for(size_t i = 0; i < nb_etapes_demi; i++) {
+        double ratio = 1.0 - (static_cast<double>(i) / (nb_etapes_demi));
+        assombrir_image(image_source, image_destination, ratio);
+        sauver_PNG(
+            chemin_destination + "/images/" + nom_image + "_" +
+            to_string(i) + ".png", image_destination
+        );
+    }
+
+    size_t nb_etapes_demi2 = nb_etapes - nb_etapes_demi;
+    for(size_t i = 0; i < nb_etapes_demi2; i++) {
+        double ratio = static_cast<double>(i) / (nb_etapes_demi2 - 1);
+        assombrir_image(image_cible, image_destination, ratio);
+        sauver_PNG(
+            chemin_destination + "/images/" + nom_image + "_" +
+            to_string(i + nb_etapes_demi) + ".png", image_destination
+        );
+    }
+
+    generer_GIF(
+        chemin_destination + "/images/" + nom_image + "_",
+        chemin_destination + "/gif/" + nom_image,
+        0, nb_etapes - 1, 15, 0
+    );
+}

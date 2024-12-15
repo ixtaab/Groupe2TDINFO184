@@ -1,0 +1,5 @@
+creer_animation_transition_noir
+Schemin_destination = ./test_out/transition_noir
+Schemin_image = ./test_ressources/images/grenouille.png
+Schemin_image_cible = ./test_ressources/images/panda.png
+Enb_etapes = 10

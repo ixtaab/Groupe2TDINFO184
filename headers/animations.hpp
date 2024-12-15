@@ -21,6 +21,12 @@ enum class MasquageMethod {
     PERSIENNES
 };
 
+enum class RemplacementMethod {
+    RIDEAU,
+    PERSIENNES,
+    ALEATOIRE
+};
+
 void creer_dossiers_sortie(const string& chemin_base);
 string extraire_nom_fichier(const string& chemin_fichier);
 
@@ -38,3 +44,7 @@ void creer_animation_fondu_bruitage(const string& chemin_image, const string& ch
 void creer_animation_fondu_flou(const string& chemin_image, const string& chemin_destination, size_t nb_etapes, size_t intensite_max);
 void creer_animation_retrecir(const string& chemin_image, const string& chemin_destination, size_t nb_etapes);
 void creer_animation_masquage(const string& chemin_image, const string& chemin_destination, size_t nb_etapes, RVB couleur, MasquageMethod method);
+void creer_animation_transition_noir(const string& chemin_image_source, const string& chemin_image_cible, const string& chemin_destination, size_t nb_etapes);
+void creer_animation_transition_fondu(const string& chemin_image_source, const string& chemin_image_cible, const string& chemin_destination, size_t nb_etapes);
+void creer_animation_transition_glissement(const string& chemin_image_source, const string& chemin_image_cible, const string& chemin_destination, size_t nb_etapes);
+// void creer_animation_transition_remplacement(const string& chemin_image_source, const string& chemin_image_cible, const string& chemin_destination, size_t nb_etapes, RemplacementMethod method, size_t separation = 2);

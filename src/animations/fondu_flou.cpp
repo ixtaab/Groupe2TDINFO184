@@ -15,7 +15,7 @@ void flouter_image(
     const size_t largeur = image_source.largeur;
     const size_t hauteur = image_source.hauteur;
 
-    const int rayon_kernel = static_cast<int>(ceil(3 * intensity)) / 2;
+    const int rayon_kernel = static_cast<int>(ceil(3 * intensity));
 
     double somme_facteurs = 0.0;
     std::vector<double> facteurs_gaussien(rayon_kernel + 1);

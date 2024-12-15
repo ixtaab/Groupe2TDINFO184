@@ -155,7 +155,7 @@ int main(int argc, char *argv[]) {
         string method = trouver_param_chaine(config, "Smethod", "rideau");
         
         MasquageMethod masquage_method;
-        if (method == "rideau") masquage_method = MasquageMethod::RIDEAU;
+        if      (method == "rideau") masquage_method = MasquageMethod::RIDEAU;
         else if (method == "persiennes") masquage_method = MasquageMethod::PERSIENNES;
         else throw runtime_error("Invalid masquage method: " + method);
 
@@ -166,5 +166,33 @@ int main(int argc, char *argv[]) {
             {couleur_r, couleur_v, couleur_b},
             masquage_method
         );
-    }
+    } else if (nom_fonction == "creer_animation_transition_noir") {
+        string chemin_image_cible = trouver_param_chaine(config, "Schemin_image_cible", "image_cible.png");
+        
+        creer_animation_transition_noir(
+            chemin_image,
+            chemin_image_cible,
+            chemin_destination,
+            nb_etapes
+        );
+    } else if (nom_fonction == "creer_animation_transition_fondu") {
+        string chemin_image_cible = trouver_param_chaine(config, "Schemin_image_cible", "image_cible.png");
+        
+        creer_animation_transition_fondu(
+            chemin_image,
+            chemin_image_cible,
+            chemin_destination,
+            nb_etapes
+        );
+    } else if (nom_fonction == "creer_animation_transition_glissement") {
+        string chemin_image_cible = trouver_param_chaine(config, "Schemin_image_cible", "image_cible.png");
+        
+        creer_animation_transition_glissement(
+            chemin_image,
+            chemin_image_cible,
+            chemin_destination,
+            nb_etapes
+        );
+    } 
+    
 }
