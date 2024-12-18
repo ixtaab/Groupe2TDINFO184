@@ -6,7 +6,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/bin/program",
-            "args": ["./test_ressources/configs/animation_masquage.txt"],
+            "args": ["./test_ressources/configs/fondu_bruitage_remplacement.txt"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
             "environment": [],

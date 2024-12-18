@@ -193,6 +193,22 @@ int main(int argc, char *argv[]) {
             chemin_destination,
             nb_etapes
         );
-    } 
-    
+    } else if (nom_fonction == "creer_animation_transition_remplacement") {
+        string chemin_image_cible = trouver_param_chaine(config, "Schemin_image_cible", "image_cible.png");
+        string method = trouver_param_chaine(config, "Smethod", "rideau");
+        
+        RemplacementMethod remplacement_method;
+        if      (method == "aleatoire") remplacement_method = RemplacementMethod::ALEATOIRE;
+        else if (method == "persiennes") remplacement_method = RemplacementMethod::PERSIENNES;
+        else if (method == "rideau") remplacement_method = RemplacementMethod::RIDEAU;
+        else throw runtime_error("Invalid masquage method: " + method);
+
+        creer_animation_transition_remplacement(
+            chemin_image,
+            chemin_image_cible,
+            chemin_destination,
+            nb_etapes,
+            remplacement_method
+        );
+    }
 }
