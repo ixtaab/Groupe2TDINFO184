@@ -1,7 +1,5 @@
 #include "animations.hpp"
 
-#include <optional>
-
 struct ParamEntier {
     string nom;
     int valeur;
