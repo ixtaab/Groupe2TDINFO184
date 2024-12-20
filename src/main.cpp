@@ -1,21 +1,39 @@
 #include "animations.hpp"
 
+/**
+ * Structure représentant un paramètre de type entier
+ */
 struct ParamEntier {
     string nom;
     int valeur;
 };
 
+/**
+ * Structure représentant un paramètre de type chaîne de caractères
+ */
 struct ParamChaine {
-    string nom, valeur;
+    string nom;
+    string valeur;
 };
 
+/**
+ * Structure représentant une configuration complète
+ */
 struct Config {
     string nom_fonction;
-    size_t nb_params_entier, nb_params_chaine;
+    size_t nb_params_entier;
+    size_t nb_params_chaine;
     ParamEntier params_entier[10];
     ParamChaine params_chaine[10];
 };
 
+/**
+ * Recherche un paramètre entier dans la configuration
+ * @param config Configuration à parcourir
+ * @param nom Nom du paramètre recherché
+ * @param defaut Valeur par défaut si le paramètre n'est pas trouvé
+ * @return Valeur du paramètre ou valeur par défaut
+ */
 int trouver_param_entier(const Config& config, const string& nom, int defaut) {
     for(size_t i = 0; i < config.nb_params_entier; i++) {
         if (config.params_entier[i].nom == nom) {
@@ -25,6 +43,13 @@ int trouver_param_entier(const Config& config, const string& nom, int defaut) {
     return defaut;
 }
 
+/**
+ * Recherche un paramètre chaîne dans la configuration
+ * @param config Configuration à parcourir
+ * @param nom Nom du paramètre recherché
+ * @param defaut Valeur par défaut si le paramètre n'est pas trouvé
+ * @return Valeur du paramètre ou valeur par défaut
+ */
 string trouver_param_chaine(const Config& config, const string& nom, string defaut) {
     for(size_t i = 0; i < config.nb_params_chaine; i++) {
         if (config.params_chaine[i].nom == nom) {
@@ -34,28 +59,45 @@ string trouver_param_chaine(const Config& config, const string& nom, string defa
     return defaut;
 }
 
+/**
+ * Affiche un paramètre entier
+ */
 void affichage_param_entier(ParamEntier params_entier) {
     cout << params_entier.nom << " = " << params_entier.valeur << "\n";
 }
 
+/**
+ * Affiche un paramètre chaîne
+ */
 void affichage_param_chaine(ParamChaine params_chaine) {
     cout << params_chaine.nom << " = " << params_chaine.valeur << "\n";
 }
 
+/**
+ * Affiche une configuration complète
+ */
 void affichage_config(Config config) {
     cout << "fonction " << config.nom_fonction << ":\n";
-
     for (size_t i = 0; i < config.nb_params_entier; i++) {
         cout << "  ";
         affichage_param_entier(config.params_entier[i]);
     }
-
     for (size_t i = 0; i < config.nb_params_chaine; i++) {
         cout << "  ";
         affichage_param_chaine(config.params_chaine[i]);
     }
 }
 
+/**
+ * Lit une configuration depuis un fichier
+ * Format attendu:
+ * - Première ligne: nom de la fonction
+ * - Lignes suivantes: paramètres
+ *   - E... pour les paramètres entiers
+ *   - S... pour les paramètres chaîne
+ * @param fichier_nom Chemin du fichier de configuration
+ * @return Configuration lue
+ */
 Config lire_config(string fichier_nom) {
     Config result;
     result.nb_params_chaine = 0;
@@ -72,13 +114,13 @@ Config lire_config(string fichier_nom) {
             if (nom_param[0] == 'E') {
                 result.params_entier[result.nb_params_entier].nom = nom_param;
                 string temp;
-                flux >> temp;
+                flux >> temp; // Lecture du "="
                 flux >> result.params_entier[result.nb_params_entier].valeur;
                 result.nb_params_entier++;
             } else if (nom_param[0] == 'S') {
                 result.params_chaine[result.nb_params_chaine].nom = nom_param;
                 string temp;
-                flux >> temp;
+                flux >> temp; // Lecture du "="
                 flux >> result.params_chaine[result.nb_params_chaine].valeur;
                 result.nb_params_chaine++;
             } else {
@@ -92,6 +134,11 @@ Config lire_config(string fichier_nom) {
     return result;
 }
 
+/**
+ * Programme principal
+ * Lit un fichier de configuration et exécute la fonction demandée
+ * avec les paramètres spécifiés
+ */
 int main(int argc, char *argv[]) {
     if (argc != 2) {
         throw runtime_error("Usage: " + string(argv[0]) + " fichier_config");
@@ -100,6 +147,7 @@ int main(int argc, char *argv[]) {
     Config config = lire_config(argv[1]);
     string nom_fonction = config.nom_fonction;
 
+    // Récupère les paramètres communs
     string chemin_destination = trouver_param_chaine(config, "Schemin_destination", nom_fonction);
     string chemin_image = trouver_param_chaine(config, "Schemin_image", "image.png");
     size_t nb_etapes = trouver_param_entier(config, "Enb_etapes", 5);
